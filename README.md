@@ -1,6 +1,6 @@
 # Compose Compiler Stability Inference System
 
-A comprehensive study of how the Compose compiler determines type stability for recomposition optimization.
+A comprehensive study of how the Compose compiler determines type stability for recomposition optimization. All details that [Optimize App Performance By Mastering Stability in Jetpack Compose](https://medium.com/proandroiddev/optimize-app-performance-by-mastering-stability-in-jetpack-compose-69f40a8c785d) and [compose-performance](https://github.com/skydoves/compose-performance) couldn't take in.
 
 <a href="https://www.android.skydoves.me/">
 <img src="https://github.com/user-attachments/assets/e014ce01-3461-40af-bb2a-eb44f3f55f36" width="13%" align="right"/>
