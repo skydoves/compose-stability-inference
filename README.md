@@ -2862,7 +2862,7 @@ Key principles:
 Understanding this system allows developers to structure code for optimal Compose performance while maintaining type safety and correctness. If you want to get more information about the Compose performance, check out [compose-performance repository](https://github.com/skydoves/compose-performance).
 
 ## Find this repository useful? :heart:
-Support it by joining __[stargazers](https://github.com/skydoves/compose-performance/stargazers)__ for this repository. :star: <br>
+Support it by joining __[stargazers](https://github.com/skydoves/compose-stability-inference/stargazers)__ for this repository. :star: <br>
 Also, __[follow me](https://github.com/skydoves)__ on GitHub for my next creations! 🤩
 
 # License
