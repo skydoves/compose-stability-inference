@@ -173,8 +173,6 @@ If you're eager to dive deeper into Kotlin and Android, explore [Dove Letter](ht
 
 The Compose compiler implements a stability inference system to enable recomposition optimization. This system analyzes types at compile time to determine whether their values can be safely compared for equality during recomposition.
 
-**Source File:** `compiler-hosted/src/main/java/androidx/compose/compiler/plugins/kotlin/analysis/Stability.kt`
-
 The inference process involves analyzing type declarations, examining field properties, and tracking stability through generic type parameters. The results inform the runtime whether to skip recomposition when parameter values remain unchanged.
 
 ### 1.2 Core Concepts
