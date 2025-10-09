@@ -1003,7 +1003,7 @@ private fun stabilityOf(expr: IrCall, baseStability: Stability): Stability {
 }
 ```
 
-**Known Stable Functions:** (from )
+**Known Stable Functions:**
 
 ```kotlin
 val stableFunctions = mapOf(
@@ -1608,7 +1608,7 @@ Both result in:
 
 **Static Expression Optimization (Key Difference)**
 
-`@Immutable` has special treatment for static expression detection ().
+`@Immutable` has special treatment for static expression detection.
 
 ```kotlin
 private fun IrConstructorCall.isStatic(): Boolean {
