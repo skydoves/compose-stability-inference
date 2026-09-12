@@ -4,15 +4,11 @@ Describe the big picture of your changes here to communicate to the maintainers 
 ### Types of changes
 What types of changes does your code introduce?
 
-- [ ] Bugfix (non-breaking change which fixes an issue)
-- [ ] New feature (non-breaking change which adds functionality)
-- [ ] Breaking change (fix or feature that would cause existing functionality to not work as expected)
+- [ ] Correction (fixes an inaccurate or outdated explanation)
+- [ ] New content (adds a section, example, or chapter)
+- [ ] Restructure (reorganizes existing content)
 
 ### Preparing a pull request for review
-Ensure your change is properly formatted by running:
-
-```gradle
-$ ./gradlew spotlessApply
-```
-
-Please correct any failures before requesting a review.
+- [ ] Claims about the compiler are backed by the current [Compose compiler plugin](https://github.com/JetBrains/kotlin/tree/master/plugins/compose) or [Compose runtime](https://github.com/androidx/androidx/tree/androidx-main/compose/runtime) source
+- [ ] Code snippets match what the compiler emits
+- [ ] The table of contents matches the headings

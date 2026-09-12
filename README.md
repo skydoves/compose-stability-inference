@@ -19,8 +19,8 @@ A comprehensive study of how the Compose compiler determines type stability for 
 ## Table of Contents
 
 - [Compose Compiler Stability Inference System](#compose-compiler-stability-inference-system)
-  - [📘 Manifest Android Interview](#-manifest-android-interview)
-  - [🕊️ Dove Letter](#️-dove-letter)
+  - [💝 Sponsors](#-sponsors)
+  - [📗 Jetpack Compose Mechanisms Book](#-jetpack-compose-mechanisms-book)
   - [Table of Contents](#table-of-contents)
   - [Chapter 1: Foundations](#chapter-1-foundations)
     - [1.1 Introduction](#11-introduction)
@@ -29,9 +29,10 @@ A comprehensive study of how the Compose compiler determines type stability for 
       - [Recomposition Mechanics](#recomposition-mechanics)
     - [1.3 The Role of Stability](#13-the-role-of-stability)
       - [Performance Impact](#performance-impact)
+    - [1.4 Strong Skipping](#14-strong-skipping)
   - [Chapter 2: Stability Type System](#chapter-2-stability-type-system)
     - [2.1 Type Hierarchy](#21-type-hierarchy)
-    - [2.2 Compile-Time Stability](#22-compile-time-stability)
+    - [2.2 Compile Time Stability](#22-compile-time-stability)
       - [Stability.Certain](#stabilitycertain)
     - [2.3 Runtime Stability](#23-runtime-stability)
       - [Stability.Runtime](#stabilityruntime)
@@ -48,21 +49,21 @@ A comprehensive study of how the Compose compiler determines type stability for 
       - [Key Decision Points Explained](#key-decision-points-explained)
   - [Chapter 3: The Inference Algorithm](#chapter-3-the-inference-algorithm)
     - [3.1 Algorithm Overview](#31-algorithm-overview)
-    - [3.2 Type-Level Analysis](#32-type-level-analysis)
+    - [3.2 Type Level Analysis](#32-type-level-analysis)
       - [Phase 1: Fast Path Type Checks](#phase-1-fast-path-type-checks)
       - [Phase 2: Type Parameter Handling](#phase-2-type-parameter-handling)
       - [Phase 3: Nullable Type Unwrapping](#phase-3-nullable-type-unwrapping)
-      - [Phase 4: Inline Class Handling](#phase-4-inline-class-handling)
-    - [3.3 Class-Level Analysis](#33-class-level-analysis)
+      - [Phase 4: Value Class Handling](#phase-4-value-class-handling)
+    - [3.3 Class Level Analysis](#33-class-level-analysis)
       - [Phase 5: Cycle Detection](#phase-5-cycle-detection)
       - [Phase 6: Annotation and Marker Checks](#phase-6-annotation-and-marker-checks)
       - [Phase 7: Known Constructs](#phase-7-known-constructs)
       - [Phase 8: External Configuration](#phase-8-external-configuration)
-      - [Phase 9: External Module Handling](#phase-9-external-module-handling)
+      - [Phase 9: Runtime Stability for Separately Compiled Classes](#phase-9-runtime-stability-for-separately-compiled-classes)
       - [Phase 10: Java Type Handling](#phase-10-java-type-handling)
       - [Phase 11: General Interface Handling](#phase-11-general-interface-handling)
-      - [Phase 12: Field-by-Field Analysis](#phase-12-field-by-field-analysis)
-    - [3.4 Expression-Level Analysis](#34-expression-level-analysis)
+      - [Phase 12: Field by Field Analysis](#phase-12-field-by-field-analysis)
+    - [3.4 Expression Level Analysis](#34-expression-level-analysis)
       - [Constant Expressions](#constant-expressions)
       - [Function Call Expressions](#function-call-expressions)
       - [Variable Reference Expressions](#variable-reference-expressions)
@@ -79,11 +80,11 @@ A comprehensive study of how the Compose compiler determines type stability for 
       - [Annotation Generation](#annotation-generation)
     - [4.4 Normalization Process](#44-normalization-process)
   - [Chapter 5: Case Studies](#chapter-5-case-studies)
-    - [5.1 Primitive and Built-in Types](#51-primitive-and-built-in-types)
+    - [5.1 Primitive and Standard Library Types](#51-primitive-and-standard-library-types)
       - [Integer Types](#integer-types)
       - [String Type](#string-type)
       - [Function Types](#function-types)
-    - [5.2 User-Defined Classes](#52-user-defined-classes)
+    - [5.2 User Defined Classes](#52-user-defined-classes)
       - [Simple Data Class](#simple-data-class)
       - [Class with Mutable Property](#class-with-mutable-property)
       - [Class with Mixed Properties](#class-with-mixed-properties)
@@ -105,12 +106,13 @@ A comprehensive study of how the Compose compiler determines type stability for 
     - [6.1 Stability Annotations](#61-stability-annotations)
       - [@Stable Annotation](#stable-annotation)
       - [@Immutable Annotation](#immutable-annotation)
-      - [Compiler-Level Differences: @Stable vs @Immutable](#compiler-level-differences-stable-vs-immutable)
-      - [@StableMarker Meta-Annotation](#stablemarker-meta-annotation)
+      - [Compiler Level Differences: @Stable vs @Immutable](#compiler-level-differences-stable-vs-immutable)
+      - [@StableMarker Meta Annotation](#stablemarker-meta-annotation)
     - [6.2 Configuration Files](#62-configuration-files)
       - [File Format](#file-format)
       - [Pattern Syntax](#pattern-syntax)
       - [Gradle Configuration](#gradle-configuration)
+      - [Feature Flags](#feature-flags)
     - [6.3 Compiler Reports](#63-compiler-reports)
       - [Enabling Reports](#enabling-reports)
       - [Generated Files](#generated-files)
@@ -127,39 +129,44 @@ A comprehensive study of how the Compose compiler determines type stability for 
       - [Nested Substitution](#nested-substitution)
     - [7.2 Cycle Detection](#72-cycle-detection)
       - [Detection Mechanism](#detection-mechanism)
-      - [Example: Self-Referential Type](#example-self-referential-type)
+      - [Example: Self Referential Type](#example-self-referential-type)
       - [Limitation](#limitation)
     - [7.3 Special Cases](#73-special-cases)
       - [Protobuf Types](#protobuf-types)
       - [Delegated Properties](#delegated-properties)
-      - [Inline Classes with Markers](#inline-classes-with-markers)
+      - [Value Classes with Markers](#value-classes-with-markers)
   - [Chapter 8: Compiler Analysis System](#chapter-8-compiler-analysis-system)
     - [8.1 Analysis Infrastructure](#81-analysis-infrastructure)
-      - [WritableSlices: Data Flow Storage](#writableslices-data-flow-storage)
-      - [BindingContext and BindingTrace](#bindingcontext-and-bindingtrace)
+      - [IR Attributes: Backend Data Flow](#ir-attributes-backend-data-flow)
+      - [FIR Session Components: Frontend Data Flow](#fir-session-components-frontend-data-flow)
     - [8.2 Composable Call Validation](#82-composable-call-validation)
-      - [Context Checking Algorithm](#context-checking-algorithm)
-      - [Inline Lambda Restrictions](#inline-lambda-restrictions)
-      - [Type Compatibility Checking](#type-compatibility-checking)
+      - [Scope Walking Algorithm](#scope-walking-algorithm)
+      - [Validation Order](#validation-order)
+      - [Readonly Composables](#readonly-composables)
+      - [Property Getters and Delegates](#property-getters-and-delegates)
+      - [Propagating @DisallowComposableCalls](#propagating-disallowcomposablecalls)
     - [8.3 Declaration Validation](#83-declaration-validation)
       - [Composable Function Rules](#composable-function-rules)
       - [Property Restrictions](#property-restrictions)
-      - [Override Consistency](#override-consistency)
+      - [Composable Type Positions](#composable-type-positions)
+      - [Diagnostic Severity](#diagnostic-severity)
     - [8.4 Applier Target System](#84-applier-target-system)
       - [Scheme Structure](#scheme-structure)
       - [Target Inference Algorithm](#target-inference-algorithm)
-      - [Cross-Target Validation](#cross-target-validation)
-    - [8.5 Type Resolution and Inference](#85-type-resolution-and-inference)
-      - [Automatic Composable Inference](#automatic-composable-inference)
-      - [Lambda Type Adaptation](#lambda-type-adaptation)
+      - [Where Targets Come From](#where-targets-come-from)
+      - [Cross Target Validation](#cross-target-validation)
+    - [8.5 Composable Function Types](#85-composable-function-types)
     - [8.6 Analysis Pipeline](#86-analysis-pipeline)
       - [Compilation Phases](#compilation-phases)
+      - [Extension Registration](#extension-registration)
       - [Data Flow Through Phases](#data-flow-through-phases)
     - [8.7 Practical Examples](#87-practical-examples)
       - [Example: Composable Context Validation](#example-composable-context-validation)
       - [Example: Inline Lambda Analysis](#example-inline-lambda-analysis)
       - [Example: Stability and Skipping](#example-stability-and-skipping)
   - [Conclusion](#conclusion)
+  - [📘 Manifest Android Interview](#-manifest-android-interview)
+  - [🕊️ Dove Letter](#️-dove-letter)
   - [Find this repository useful? :heart:](#find-this-repository-useful-heart)
 - [License](#license)
 
@@ -199,7 +206,7 @@ The decision process:
 2. If equal and the type is stable, skip recomposition
 3. If different or unstable, execute the function body
 
-Without stability information, the runtime must conservatively recompose on every invocation, regardless of whether parameters changed.
+Without stability information, the runtime has to recompose on every invocation, whether or not the parameters changed. That was the whole story until strong skipping landed, which section 1.4 covers.
 
 ### 1.3 The Role of Stability
 
@@ -207,41 +214,67 @@ Without stability information, the runtime must conservatively recompose on ever
 
 Stability inference affects recomposition in three ways:
 
-**Smart Skipping**: Composable functions with stable parameters can be skipped when parameter values remain unchanged. This reduces the number of function executions during recomposition.
+**Skipping**: a composable whose parameter values did not change can be skipped instead of executed. Which parameters count as unchanged depends on stability, so this is where the inference pays off.
 
-**Comparison Propagation**: The compiler passes stability information to child composable calls, enabling nested optimizations throughout the composition tree.
+**Comparison Propagation**: the compiler passes what it knows about a parameter down to child composable calls through the `$changed` mask, so a value already proven unchanged is not compared again further down the tree.
 
-**Comparison Strategy**: The runtime selects between structural equality (`equals()`) for stable types and referential equality (`===`) for unstable types, affecting change detection behavior.
+**Comparison Strategy**: the runtime picks structural equality (`equals()`) for stable types and referential equality (`===`) for unstable ones. Section 1.4 follows this thread, because since strong skipping became the default this is the part that still decides the outcome.
 
 Consider this example:
 
 ```kotlin
-// Unstable parameter type - interface with unknown stability
+// Unstable parameter type: an interface with unknown stability
 @Composable
 fun ExpensiveList(items: List<String>) {
-    // List is an interface - has Unknown stability
-    // Falls back to instance comparison
+    // List is an interface, so it has Unknown stability
+    // Comparison falls back to the instance
 }
 
-// Stable parameter type - using immutable collection
+// Stable parameter type: an immutable collection
 @Composable
 fun ExpensiveList(items: ImmutableList<String>) {
     // ImmutableList is in KnownStableConstructs
-    // Can skip recomposition when unchanged
+    // Comparison uses equals()
 }
 
-// Alternative: Using listOf() result
+// The expression and the type are two different questions
 @Composable
-fun ExpensiveList(items: List<String>) {
-    // If items comes from listOf(), the expression is stable
-    // But the List type itself is still an interface with Unknown stability
+fun Caller() {
+    // listOf() is a known stable function, so this expression is stable
+    val items = listOf("a", "b")
+    // but the parameter type is still List, which is Unknown
+    ExpensiveList(items)
 }
 ```
 
-The key insight: `List` and `MutableList` are both interfaces with `Unknown` stability. To achieve stable parameters, use:
-1. `ImmutableList` from kotlinx.collections.immutable (in KnownStableConstructs)
-2. Add `kotlin.collections.List` to your stability configuration file
-3. Use `@Stable` annotation on your data classes containing List
+`List` and `MutableList` are both interfaces, so both have `Unknown` stability. To get a stable parameter, use one of:
+
+1. `ImmutableList` from kotlinx.collections.immutable, which is registered in `KnownStableConstructs`
+2. `kotlin.collections.List` added to your stability configuration file
+3. The `@Stable` annotation on the class that holds the list
+
+### 1.4 Strong Skipping
+
+Everything above describes the classic skipping rule: a restartable composable is skippable only when every parameter type is stable. Strong skipping changes that rule, and it has been enabled by default since the compiler shipped `FeatureFlag.StrongSkipping` with `default = true`:
+
+```kotlin
+enum class FeatureFlag(val featureName: String, val default: Boolean) {
+    StrongSkipping("StrongSkipping", default = true),
+    IntrinsicRemember("IntrinsicRemember", default = true),
+    OptimizeNonSkippingGroups("OptimizeNonSkippingGroups", default = true),
+    PausableComposition("PausableComposition", default = true),
+    ;
+}
+```
+
+With strong skipping on, every restartable composable becomes skippable, whatever the stability of its parameters. Stability no longer decides *whether* the function can skip. It decides *how the parameter is compared*:
+
+- A stable parameter is compared with `Composer.changed()`, which uses structural equality (`equals()`)
+- An unstable parameter is compared with `Composer.changedInstance()`, which uses referential equality (`===`)
+
+Strong skipping also memoizes lambdas that capture unstable values, which previously blocked lambda reuse.
+
+So stability still matters, just for a different reason. A `data class` that is unstable will be compared by identity, and a fresh instance built on every recomposition will never compare equal, so the child recomposes every time even though its contents are identical. To opt a composable out of skipping entirely, annotate it with `@NonSkippableComposable`.
 
 ## Chapter 2: Stability Type System
 
@@ -261,11 +294,11 @@ sealed class Stability {
 
 Each subtype represents a different category of stability information available to the compiler.
 
-### 2.2 Compile-Time Stability
+### 2.2 Compile Time Stability
 
 #### Stability.Certain
 
-This type represents stability that can be determined completely at compile time.
+This type represents stability the compiler can settle completely at compile time.
 
 **Structure:**
 ```kotlin
@@ -313,28 +346,30 @@ The `declaration` references the class whose stability requires runtime determin
 // Source code
 class Box<T>(val value: T)
 
-// Compiler-generated code
+// Compiler generated code
 @StabilityInferred(parameters = 0b1)
 class Box<T>(val value: T) {
-    companion object {
-        @JvmField
-        val $stable: Int = /* computed based on type parameters */
-    }
+    // a synthetic static final int placed directly on the class,
+    // not inside a companion object
+    val $stable: Int = 0
 }
 ```
 
+The `StabilityInferred` KDoc in the Compose runtime describes the field the same way: "there will be a synthetic static final int `$stable` added to the class."
+
 **When Applied:**
-- Classes from external modules (separately compiled)
-- Generic classes where type parameters affect stability
-- Classes with `@StabilityInferred` annotation
+- Classes compiled in a separate module, which arrive as external stubs carrying an `@StabilityInferred` bitmask
+- Public or internal classes declared in a different file than the one being compiled, on JVM
+
+Only those two. A generic class in the same file resolves to `Stability.Parameter` instead, covered in 2.5.
 
 **Runtime Behavior:**
 
-At instantiation sites, the runtime computes the `$stable` field value:
+The `$stable` field holds the class's own contribution. The call site combines it with the stability of the type arguments the bitmask selects:
 
 ```kotlin
-Box<Int>         // $stable = STABLE (0b000)
-Box<MutableList> // $stable = UNSTABLE (0b100)
+Box<Int>              // $stable contributes 0, Int is stable       -> stable
+Box<MutableList<Int>> // $stable contributes 0, MutableList is not  -> unstable
 ```
 
 **Implementation:** See `Stability.kt` (the `Runtime` handling in `StabilityInferencer.stabilityOf`) and `ClassStabilityTransformer.kt` (the generated `$stable` field).
@@ -362,13 +397,12 @@ class Screen(val source: Repository)
 ```
 
 **Usage Conditions:**
-- Interface types (unknown implementations)
-- Abstract classes without concrete analysis
-- Types in incremental compilation scenarios
+- Interface types, since the implementation is not known
+- `open` and `abstract` classes, which seed as `Unknown` because a subclass could add unstable state
 
 **Runtime Behavior:**
 
-When encountering Unknown stability, the runtime falls back to instance comparison (`===`) for change detection. This conservative approach ensures correctness but prevents skipping optimizations.
+`Unknown` is the one stability that cannot be expressed at runtime. `isExpressible()` returns `false` for it, so there is no `$stable` read to emit and no bit to set, and the class falls back to `Unstable` at the use site. Comparison then goes through `changedInstance`, which uses `===`.
 
 **Implementation:** See `Stability.kt` (the `Stability.Unknown` branch in `StabilityInferencer.stabilityOf`).
 
@@ -450,9 +484,9 @@ Parameter  + Parameter  = Combined([Parameter, Parameter])
 Runtime    + Parameter  = Combined([Runtime, Parameter])
 ```
 
-**Key insight:** Adding a stable `Certain` returns the *other* operand unchanged, so only genuinely uncertain factors (`Parameter`, `Runtime`, `Unknown`) accumulate into a `Combined`. A `Combined` is only produced when neither operand is `Certain`.
+**The key observation:** adding a stable `Certain` returns the *other* operand unchanged, so only genuinely uncertain factors (`Parameter`, `Runtime`, `Unknown`) accumulate into a `Combined`. A `Combined` is only produced when neither operand is `Certain`.
 
-**Key Property:** Unstable stability dominates all combinations. A single unstable component makes the entire result unstable.
+**Key Property:** unstable stability dominates all combinations. A single unstable component makes the entire result unstable.
 
 ### 2.7 Stability Decision Tree
 
@@ -462,116 +496,134 @@ The Compose compiler follows a systematic decision tree when determining stabili
 
 ```
 ┌─────────────────────────────────┐
-│     Start: Analyze Type/Class   │
+│     Start: Analyze a type       │
 └────────────┬────────────────────┘
              │
              ▼
 ┌─────────────────────────────────┐
-│  Is it a primitive type?        │───Yes──→ [STABLE]
-│  (Int, Boolean, Float, etc.)    │
+│  Error or dynamic type?         │───Yes──→ [UNSTABLE]
 └────────────┬────────────────────┘
              │ No
              ▼
 ┌─────────────────────────────────┐
-│  Is it String or Unit?          │───Yes──→ [STABLE]
+│  Unit, primitive, String, or    │───Yes──→ [STABLE]
+│  a function type?               │
 └────────────┬────────────────────┘
              │ No
              ▼
 ┌─────────────────────────────────┐
-│  Is it a function type?         │───Yes──→ [STABLE]
-│  (Function<*>, KFunction<*>)    │
+│  Type parameter?                │───Yes──→ substitute, else
+└────────────┬────────────────────┘          [PARAMETER]
+             │ No
+             ▼
+┌─────────────────────────────────┐
+│  Nullable?                      │───Yes──→ analyze the
+└────────────┬────────────────────┘          non null type
+             │ No
+             ▼
+┌─────────────────────────────────┐
+│  Value class?                   │───Yes──→ marker → [STABLE],
+│  (multi field, then inline)     │          else analyze the
+└────────────┬────────────────────┘          underlying types
+             │ No
+             ▼
+┌─────────────────────────────────┐
+│     Now analyze the class       │
+└────────────┬────────────────────┘
+             │
+             ▼
+┌─────────────────────────────────┐
+│  Already being analyzed?        │───Yes──→ [UNSTABLE]
+│  (cycle)                        │
 └────────────┬────────────────────┘
              │ No
              ▼
 ┌─────────────────────────────────┐
-│  Has @Stable or @Immutable?     │───Yes──→ [STABLE]
+│  Has a stable marked descendant?│───Yes──→ [STABLE]
+│  (@Stable, @Immutable, any      │
+│   @StableMarker annotation,     │
+│   or a known stable marker)     │
 └────────────┬────────────────────┘
              │ No
              ▼
 ┌─────────────────────────────────┐
-│  Has @StableMarker descendant?  │───Yes──→ [STABLE]
+│  Enum class or enum entry?      │───Yes──→ [STABLE]
 └────────────┬────────────────────┘
              │ No
              ▼
 ┌─────────────────────────────────┐
-│  Is it an Enum class/entry?     │───Yes──→ [STABLE]
+│  Object (singleton)?            │───Yes──→ [STABLE]
 └────────────┬────────────────────┘
              │ No
              ▼
 ┌─────────────────────────────────┐
-│  Is it an object (singleton)?   │───Yes──→ [STABLE]
-└────────────┬────────────────────┘
-             │ No
-             ▼
-┌─────────────────────────────────┐
-│  Is it a Protobuf type?         │───Yes──→ [STABLE]
+│  Primitive, or a Protobuf type? │───Yes──→ [STABLE]
 │  (GeneratedMessage/Lite)        │
 └────────────┬────────────────────┘
              │ No
              ▼
 ┌─────────────────────────────────┐
-│  Is it in KnownStableConstructs?│───Yes──→ [STABLE/RUNTIME]
-│  (Pair, Triple, etc.)           │          (check type params)
+│  In KnownStableConstructs?      │───Yes──→ [STABLE] combined with
+│  (Pair, Triple, ImmutableList…) │          the masked type params
 └────────────┬────────────────────┘
              │ No
              ▼
 ┌─────────────────────────────────┐
-│  Matches external config?       │───Yes──→ [STABLE/RUNTIME]
-│  (stability-config.conf)        │          (check type params)
+│  Matches the stability config?  │───Yes──→ [STABLE] combined with
+│  (stability_config.conf)        │          the masked type params
 └────────────┬────────────────────┘
              │ No
              ▼
 ┌─────────────────────────────────┐
-│  Is it an interface?            │───Yes──→ [UNKNOWN]
+│  External Java stub?            │───Yes──→ [UNSTABLE]
 └────────────┬────────────────────┘
              │ No
              ▼
 ┌─────────────────────────────────┐
-│  Is it from external Java?      │───Yes──→ [UNSTABLE]
+│  Interface?                     │───Yes──→ [UNKNOWN]
 └────────────┬────────────────────┘
              │ No
              ▼
 ┌─────────────────────────────────┐
-│  Public/internal & declared in  │───Yes──→ [RUNTIME]
-│  a different file? (JVM, for     │          (read $stable,
-│  incremental compilation)       │           apply type-param mask)
+│  External stub with no          │───Yes──→ [UNSTABLE]
+│  @StabilityInferred bitmask?    │
 └────────────┬────────────────────┘
              │ No
              ▼
 ┌─────────────────────────────────┐
-│  External stub with a stability │───Yes──→ [RUNTIME] / [UNSTABLE]
-│  bitmask? (@StabilityInferred)  │          (no bitmask → UNSTABLE)
+│  JVM, public or internal, and   │───Yes──→ [RUNTIME] combined with
+│  declared in a different file?  │          every type parameter
+│  (incremental compilation)      │          (mask = null)
+└────────────┬────────────────────┘
+             │ No
+             ▼
+┌─────────────────────────────────┐
+│  External stub?                 │───Yes──→ [RUNTIME] combined with
+│  (separately compiled module)   │          the masked type params
 └────────────┬────────────────────┘
              │ No
              ▼
 ┌─────────────────────────────────┐
 │  Seed stability:                │
-│  final class → start STABLE     │
-│  non-final   → start UNKNOWN     │
+│  final class → STABLE           │
+│  non final   → UNKNOWN          │
 └────────────┬────────────────────┘
              │
              ▼
 ┌─────────────────────────────────┐
-│  Analyze class members:         │
-│  - Check all properties         │
-│  - Check backing fields         │
-│  - Check superclass             │
-│    (ignored if Unknown)         │
+│  Any non delegated var          │───Yes──→ [UNSTABLE]
+│  property with a backing field? │
+└────────────┬────────────────────┘
+             │ No
+             ▼
+┌─────────────────────────────────┐
+│  Combine every backing field    │
+│  type, then the superclass      │
+│  (dropped if it is Unknown)     │
 └────────────┬────────────────────┘
              │
              ▼
-┌─────────────────────────────────┐
-│  Any non-delegated var          │───Yes──→ [UNSTABLE]
-│  (mutable) property?            │
-└────────────┬────────────────────┘
-             │ No
-             ▼
-┌─────────────────────────────────┐
-│  All members stable?            │───Yes──→ [STABLE]
-└────────────┬────────────────────┘
-             │ No
-             ▼
-        [UNSTABLE/COMBINED/UNKNOWN]
+        [STABLE / UNSTABLE / COMBINED / UNKNOWN]
 ```
 
 #### Decision Tree for Generic Types
@@ -636,13 +688,13 @@ For expressions (used in default parameters and composable bodies):
              ▼
 ┌─────────────────────────────────┐
 │  Is it a val reference?         │───Yes──→ Check initializer
-│  (non-mutable variable)         │          stability
+│  (a val, not a var)             │          stability
 └────────────┬────────────────────┘
              │ No
              ▼
 ┌─────────────────────────────────┐
 │  Is it a composite with all     │───Yes──→ [STABLE]
-│  stable sub-expressions?        │
+│  stable subexpressions?         │
 └────────────┬────────────────────┘
              │ No
              ▼
@@ -653,43 +705,47 @@ For expressions (used in default parameters and composable bodies):
 
 **1. Early Exit Conditions:**
 - Primitives, String, Unit, and function types are immediately stable
-- Stability annotations override all other checks
-- Enums (classes and entries) are always stable (finite, immutable values)
-- Objects (singletons) are always stable
+- Stability annotations override all other checks, including the value class branches
+- Enums, both classes and entries, are always stable because their instances are singletons and their state is fixed after initialization
+- Objects are always stable, since there is exactly one instance and identity comparison always holds
 
 **2. Interface Handling:**
 - Interfaces return `Unknown` stability because implementations can vary
 - Exception: Interfaces with `@Stable` marker are trusted
 
 **3. External Types:**
-- Java types default to unstable (mutable by default in Java)
-- Protobuf types are special-cased as stable (immutable messages)
-- External Kotlin modules use `@StabilityInferred` bitmasks
+- Java types default to unstable, since Java has no `val` guarantee
+- Protobuf types are special cased as stable, because generated messages present an immutable API
+- External Kotlin modules use `@StabilityInferred` bitmasks, and an external stub without one is unstable
 
 **4. Member Analysis:**
-- The seed stability is `Stable` for `final` classes and `Unknown(declaration)` for non-final (`open`/`abstract`) classes
-- Any non-delegated `var` property makes the entire class unstable
-- Delegated properties are analyzed based on their delegate type
-- Superclass stability is combined into the result, but an `Unknown` superclass result is ignored (so an open superclass doesn't poison the subclass)
+- The seed stability is `Stable` for `final` classes and `Unknown(declaration)` for non final (`open` or `abstract`) classes
+- Any non delegated `var` property makes the entire class unstable
+- Delegated properties are analyzed through their delegate type instead
+- Superclass stability is combined into the result, but an `Unknown` superclass result is dropped, so an open superclass does not poison the subclass
 
 **5. Generic Type Resolution:**
-- Bitmask encodes which type parameters affect stability
-- Maximum 32 type parameters supported (32-bit bitmask)
+- The bitmask encodes which type parameters affect stability
+- At most 32 type parameters are considered, since the mask is an `Int`
 - Type arguments are substituted and analyzed recursively
 
-This decision tree is implemented across several key functions in the compiler, with the main entry point being `StabilityInferencer.stabilityOf()`.
+This decision tree is implemented across several functions in the compiler, with the main entry point being `StabilityInferencer.stabilityOf()`.
 
 ## Chapter 3: The Inference Algorithm
 
 ### 3.1 Algorithm Overview
 
-The stability inference algorithm operates following the decision tree shown above, with multiple optimization paths for early termination. The implementation spans several key components working together.
+The algorithm follows the decision tree above. `StabilityInferencer` carries three pieces of state through the whole recursion, and each phase below makes more sense once you know what they are:
 
-**Algorithm Structure:**
+- **`substitutions`**: a map from type parameter symbol to the type argument currently bound to it, grown as the walk descends through generic types
+- **`currentlyAnalyzing`**: the set of symbols on the current analysis stack, which is what stops a recursive type from recursing forever
+- **`analysisEntryFile`**: the file that started this whole request, which decides whether a class can be inferred concretely or has to fall back to a runtime read
 
-The algorithm short-circuits when it can determine stability definitively, avoiding unnecessary analysis.
+Results are cached in `cache`, keyed by `SymbolForAnalysis`, but only when the declaration lives in `analysisEntryFile`. A result that depended on which file asked the question cannot be reused by a different question.
 
-### 3.2 Type-Level Analysis
+The algorithm short circuits as soon as it can settle stability definitively, so most types never reach the full member walk.
+
+### 3.2 Type Level Analysis
 
 #### Phase 1: Fast Path Type Checks
 
@@ -748,38 +804,68 @@ class Container<T>(val item: T)
 
 #### Phase 3: Nullable Type Unwrapping
 
-Nullable types defer to their non-null counterpart:
+Nullable types defer to their non null counterpart:
 
 ```kotlin
-type.isNullable() ->
-    stabilityOf(type.makeNotNull(), substitutions, currentlyAnalyzing)
+type.isNullable() -> stabilityOf(
+    type.makeNotNull(),
+    substitutions,
+    currentlyAnalyzing,
+    analysisEntryFile
+)
 ```
 
 **Examples:**
 - `Int?` → analyze `Int` → Stable
 - `User?` → analyze `User` → depends on User structure
 
-#### Phase 4: Inline Class Handling
+#### Phase 4: Value Class Handling
 
+Kotlin has two shapes of value class, and the compiler checks them in order. A **multi field value class** holds more than one underlying property, and the compiler reports it through `isFullValueClassType()`:
 
+```kotlin
+type.isFullValueClassType() -> {
+    val valueClassDeclaration = type.getClass()
+        ?: error("Failed to resolve the class definition of full value class type $type")
+    if (valueClassDeclaration.hasStableMarker()) {
+        Stability.Stable
+    } else {
+        val primaryProperties = valueClassDeclaration.valueClassRepresentation
+            ?.underlyingPropertyNamesToTypes
+            ?: return Stability.Unstable // is abstract value class
+        primaryProperties
+            .map { (_, type) -> stabilityOf(type, substitutions, currentlyAnalyzing, analysisEntryFile) }
+            .let { Stability.Combined(it) }
+    }
+}
+```
 
-Inline classes (value classes) have special handling:
+Every underlying property contributes, and the results are folded into a `Combined`. An abstract value class has no `valueClassRepresentation`, so it falls back to `Unstable`.
+
+A single field **inline class** unwraps to its one underlying type instead:
 
 ```kotlin
 type.isInlineClassType() -> {
     val inlineClassDeclaration = type.getClass()
+        ?: error("Failed to resolve the class definition of inline type $type")
 
     if (inlineClassDeclaration.hasStableMarker()) {
         Stability.Stable
     } else {
         stabilityOf(
-            type = getInlineClassUnderlyingType(inlineClassDeclaration),
+            type = getInlineClassUnderlyingType(
+                inlineClassDeclaration,
+                treatCompatibleFullValueClassesAsInline = false
+            ),
             substitutions = substitutions,
-            currentlyAnalyzing = currentlyAnalyzing
+            currentlyAnalyzing = currentlyAnalyzing,
+            analysisEntryFile
         )
     }
 }
 ```
+
+The `treatCompatibleFullValueClassesAsInline = false` argument is what keeps the two branches apart. Without it, a multi field value class that happens to be layout compatible with an inline class would be unwrapped to a single type and the other properties would go unchecked.
 
 **Examples:**
 
@@ -792,6 +878,10 @@ value class UserId(val value: Int)
 value class Token(val value: String)
 // Checks: stabilityOf(String) = Stable
 
+value class Range(val start: Int, val end: Int)
+// Multi field value class
+// Checks both: Combined([Stable, Stable])
+
 @JvmInline
 @Stable
 value class SpecialId(val list: MutableList<Int>)
@@ -799,7 +889,9 @@ value class SpecialId(val list: MutableList<Int>)
 // Result: Stable (by annotation)
 ```
 
-### 3.3 Class-Level Analysis
+A stable marker short circuits both branches, so the annotation wins over whatever the underlying types say.
+
+### 3.3 Class Level Analysis
 
 #### Phase 5: Cycle Detection
 
@@ -841,6 +933,30 @@ if (declaration.isProtobufType()) return Stability.Stable
 - `@Stable` annotation
 - `@Immutable` annotation
 - Annotations marked with `@StableMarker`
+- Annotations listed in `KnownStableConstructs.stableMarkers`
+
+That last entry exists because some annotations outside Compose carry the same guarantee but cannot be annotated with `@StableMarker`:
+
+```kotlin
+val stableMarkers = setOf(
+    ClassId(
+        FqName("com.google.errorprone.annotations"),
+        Name.identifier("Immutable")
+    )
+)
+```
+
+The check itself resolves the annotation class and tests both paths:
+
+```kotlin
+private fun IrAnnotation.isStableMarker(): Boolean {
+    val owner = annotationClass?.owner ?: return false
+    return owner.hasAnnotation(ComposeFqNames.StableMarker) ||
+            owner.classId in KnownStableConstructs.stableMarkers
+}
+```
+
+`hasStableMarkedDescendant()` then walks the supertypes, so a class inherits the marker from any annotated ancestor other than `Any`.
 
 **Enum Handling:**
 
@@ -928,9 +1044,21 @@ if (declaration.isExternalStableType()) {
 
 The same `applyTypeParameterMask` helper used for `KnownStableConstructs` (Phase 7) combines the base stability with the stability of the type arguments selected by the configured bitmask. Configuration file format is covered in Chapter 6.
 
-#### Phase 9: Runtime Stability for Separately-Compiled Classes
+#### Phase 9: Runtime Stability for Separately Compiled Classes
 
-Stability inference must be stable across **incremental compilation**, which is separated by file. If the compiler inferred concrete stability for a class declared in another file, a later edit to that file could silently invalidate the result without recompiling the dependents. To avoid this, classes that are part of the public/internal API and are declared in a **different file** than the one that started the analysis are forced to use *runtime* stability — i.e. the value of their generated `$stable` field is read at runtime instead of being inferred at compile time.
+Stability inference has to hold up under **incremental compilation**, which is separated by file. If the compiler inferred concrete stability for a class declared in another file, a later edit to that file could silently invalidate the result without recompiling the dependents. To avoid that, a class that is part of the public or internal API and lives in a **different file** than the one that started the analysis is forced to use *runtime* stability: the value of its generated `$stable` field is read at runtime instead of being decided at compile time.
+
+Before that check, an external stub with no bitmask at all is rejected outright:
+
+```kotlin
+if (declaration.origin == IrDeclarationOrigin.IR_EXTERNAL_DECLARATION_STUB &&
+    declaration.stabilityParamBitmask() == null
+) {
+    return Stability.Unstable
+}
+```
+
+The order matters. A class compiled without the Compose compiler has no `$stable` field, so returning `Runtime` for it would emit a read of a field that does not exist. Catching the missing bitmask first is what keeps that from happening.
 
 ```kotlin
 // `analysisEntryFile` is the file containing the element that started this
@@ -951,7 +1079,7 @@ if (forcedToUseRuntimeStability) {
     )
 }
 
-// Classes that come from a separately-compiled module arrive as external stubs.
+// Classes that come from a separately compiled module arrive as external stubs.
 // Their stability is encoded in the @StabilityInferred bitmask.
 if (declaration.origin == IrDeclarationOrigin.IR_EXTERNAL_DECLARATION_STUB) {
     val mask = declaration.stabilityParamBitmask() ?: return Stability.Unstable
@@ -968,12 +1096,15 @@ if (declaration.origin == IrDeclarationOrigin.IR_EXTERNAL_DECLARATION_STUB) {
 
 **Key points:**
 
-1. The decision is driven by the **file** the declaration lives in (via `analysisEntryFile`), not by a "current module" check. This is what makes the result safe under incremental compilation.
-2. `Stability.Runtime(declaration)` means "emit a read of `declaration.$stable` at runtime"; it is combined with the stability of the relevant type arguments via `applyTypeParameterMask`.
-3. When `forcedToUseRuntimeStability`, `mask` is `null`, so **all** type parameters are taken into account. For genuine external stubs the precise `@StabilityInferred` bitmask is used instead.
-4. An external stub with no `@StabilityInferred` bitmask (e.g. a third-party class compiled without the Compose compiler) is treated as `Unstable`.
+1. The decision is driven by the **file** the declaration lives in, through `analysisEntryFile`, not by a "current module" check. That is what makes the result safe under incremental compilation.
+2. `Stability.Runtime(declaration)` means "emit a read of `declaration.$stable` at runtime". It is combined with the stability of the relevant type arguments through `applyTypeParameterMask`.
+3. Under `forcedToUseRuntimeStability` the mask is `null`, so **every** type parameter is taken into account. The compiler has no bitmask to consult yet, since the class is being compiled in this same module, so it assumes the worst. For a genuine external stub the recorded `@StabilityInferred` bitmask is used instead.
+4. An external stub with no `@StabilityInferred` bitmask, such as a third party class compiled without the Compose compiler, is `Unstable`.
+5. The check only applies when `isTargetJvm` is true. Other targets have no static field to read, which is why Chapter 4 describes a separate scheme for Native and JS.
 
-> Note: the order of checks in the source is `Java stub → interface → external-stub-without-bitmask → forcedToUseRuntimeStability → external stub`. Phases 10 and 11 below (Java and interface handling) actually execute *before* this runtime-stability logic.
+Because an external stub has no `IrFile` parent, `fileContainingDeclaration` is `null` for it, and the file comparison is true. So on JVM a public class from another module takes this branch rather than the external stub branch below, and its recorded bitmask is never read. Chapter 5.4 walks through what that looks like at a call site.
+
+> Note: the order of checks in the source is Java stub, then interface, then external stub without a bitmask, then `forcedToUseRuntimeStability`, then external stub. Phases 10 and 11 below actually execute *before* this runtime stability logic.
 
 #### Phase 10: Java Type Handling
 
@@ -985,20 +1116,22 @@ if (declaration.origin == IrDeclarationOrigin.IR_EXTERNAL_JAVA_DECLARATION_STUB)
 
 Java types default to unstable because:
 1. Java allows unrestricted mutability
-2. No equivalent of Kotlin's `val` guarantee
-3. No stability annotations in Java standard library
+2. There is no equivalent of Kotlin's `val` guarantee
+3. The Java standard library carries no stability annotations
 
 #### Phase 11: General Interface Handling
 
 ```kotlin
 if (declaration.isInterface) {
+    // `Stability.Unknown` is always used for interfaces because stability bitmasks
+    // aren't populated for them.
     return Stability.Unknown(declaration)
 }
 ```
 
-Without concrete implementation details, interfaces have unknown stability.
+An interface has no implementation to inspect, and `ClassStabilityTransformer` skips interfaces, so there is no `$stable` field to fall back on either. That is why the result is `Unknown` rather than `Runtime`.
 
-#### Phase 12: Field-by-Field Analysis
+#### Phase 12: Field by Field Analysis
 
 For concrete classes in the current module:
 
@@ -1036,13 +1169,13 @@ return stability
 
 **Key Points:**
 
-1. The seed is `Stable` only for `final` classes; non-final (`open`/`abstract`) classes seed as `Unknown(declaration)`, since an unknown subclass could add unstable state
-2. Any non-delegated `var` property immediately returns `Unstable`
-3. Combine stability of all backing-field (`val`) property types
-4. Include superclass stability — but only when it is **not** `Unknown` (an `Unknown` superclass result is dropped rather than propagated)
+1. The seed is `Stable` only for `final` classes. A non final `open` or `abstract` class seeds as `Unknown(declaration)`, since an unknown subclass could add unstable state
+2. Any non delegated `var` property immediately returns `Unstable`
+3. Combine the stability of every backing field type
+4. Include superclass stability, but only when it is **not** `Unknown`, since an `Unknown` superclass result is dropped rather than propagated
 5. Use the `+` operator for combination (see 2.6)
 
-### 3.4 Expression-Level Analysis
+### 3.4 Expression Level Analysis
 
 Beyond type stability, the compiler analyzes expression stability:
 
@@ -1135,48 +1268,68 @@ Each type parameter is represented by a single bit:
 - Bit N = 1: Type parameter N affects stability
 - Bit N = 0: Type parameter N does not affect stability
 
-**Maximum Limit:** 32 type parameters (Int size constraint)
+The mask is an `Int`, so only the first 32 type parameters are represented. `applyTypeParameterMask` skips anything at index 32 or higher.
 
-**Examples:**
+**Examples**, using the masks `KnownStableConstructs` records for the standard library types:
 
 ```kotlin
-// Pair<A, B>
-@StabilityInferred(parameters = 0b11)
-// Binary: 00000000000000000000000000000011
+Pair::class.qualifiedName!! to 0b11
 // Bit 0: A affects stability
 // Bit 1: B affects stability
 
-// Triple<A, B, C>
-@StabilityInferred(parameters = 0b111)
-// Binary: 00000000000000000000000000000111
+Triple::class.qualifiedName!! to 0b111
 // Bit 0: A affects stability
 // Bit 1: B affects stability
 // Bit 2: C affects stability
 
-// Result<T>
-@StabilityInferred(parameters = 0b1)
-// Binary: 00000000000000000000000000000001
+Result::class.qualifiedName!! to 0b1
 // Bit 0: T affects stability
+
+Locale::class.qualifiedName!! to 0
+// No type parameters, and stable unconditionally
 ```
+
+A class the compiler infers itself carries the same encoding in its `@StabilityInferred(parameters = ...)` annotation. Past 32 the encoding simply saturates: a class with 33 type parameters compiles to `@StabilityInferred(parameters = -1)`, every bit set, because `0b1 shl 32` wraps back to bit 0.
 
 #### Special Bit: Known Stable
 
-If bit position `typeParams.size` is set, the class is known stable:
+`ClassStabilityTransformer` sets one extra bit, at index `typeParameters.size`, when the class turned out to be stable on its own:
 
 ```kotlin
-@StabilityInferred(parameters = 0b101)
-class Container<T, U>
-// Binary: 00000000000000000000000000000101
-// Bit 0: T affects stability
-// Bit 1: U does not affect stability
-// Bit 2: Known stable bit (1 shl 2 where typeParams.size = 2)
+if (stability.knownStable() && symbols.size < 32) {
+    parameterMask = parameterMask or (0b1 shl symbols.size)
+}
 ```
 
-This indicates the class is stable regardless of type parameter instantiation.
+A class is either known stable or it is not, so this bit never coexists with parameter bits. These are the values the compiler actually emits, taken from its own golden tests:
+
+```kotlin
+class EmptyClass
+// @StabilityInferred(parameters = 1)
+// no type parameters, known stable, so bit 0 is the known stable bit
+
+class SingleParamProp<T>(val p1: T)
+// @StabilityInferred(parameters = 1)
+// bit 0 means T affects stability
+
+class SingleParamNonProp<T>(p1: T) { val p2 = p1.hashCode() }
+// @StabilityInferred(parameters = 2)
+// T is never stored, so the class is known stable and bit 1 is set
+
+class DoubleParamSingleProp<T, V>(val p1: T, p2: V) { val p3 = p2.hashCode() }
+// @StabilityInferred(parameters = 1)
+// only T is stored, so only bit 0 is set
+
+class X<T>(val p1: List<T>)
+// @StabilityInferred(parameters = 0)
+// List is an interface, so the class is unstable and no bit is set
+```
+
+For a class with no type parameters the rule collapses to a single bit: `parameters = 1` means stable, `parameters = 0` means not.
 
 #### Bitmask Application
 
-This is implemented by the `Stability.applyTypeParameterMask` extension function. Note that `mask` is nullable: a `null` mask means "consider every type parameter" (used for the incremental-compilation `Runtime` path), while a concrete mask selects parameters bit-by-bit.
+This is implemented by the `Stability.applyTypeParameterMask` extension function. Note that `mask` is nullable. A `null` mask means "consider every type parameter", which is what the incremental compilation `Runtime` path passes, while a concrete mask selects parameters one bit at a time.
 
 ```kotlin
 private fun Stability.applyTypeParameterMask(
@@ -1214,23 +1367,25 @@ private fun Stability.applyTypeParameterMask(
 
 #### JVM Platform
 
-For JVM targets, the compiler generates a static field:
+For JVM targets, `makeStabilityField()` builds a `$stable` property whose backing field is static, final, and annotated with `@JvmField`. The field sits directly on the class, not inside a companion object:
 
 ```kotlin
 // Source
-class Box<T>(val value: T)
+class Stable(val bar: Int)
+class Unstable(var bar: Int)
 
-// Generated
-@StabilityInferred(parameters = 0b1)
-class Box<T>(val value: T) {
-    companion object {
-        @JvmField
-        public static final int $stable = 0
-    }
+// Transformed IR, as printed by the compiler's own golden tests
+@StabilityInferred(parameters = 1)
+class Stable(val bar: Int) {
+  val %stable: Int = 0
+}
+@StabilityInferred(parameters = 0)
+class Unstable(var bar: Int) {
+  val %stable: Int = 8
 }
 ```
 
-The field name is always `$stable`, and it is initialized with a computed stability value.
+The `@JvmField` annotation tells `JvmPropertiesLowering` to skip the getter and rewrite reads as direct field accesses, so from Java the field is plain `Stable.$stable`.
 
 **Stability Values:**
 
@@ -1243,18 +1398,19 @@ enum class StabilityBits(val bits: Int) {
 }
 ```
 
-`bitsForSlot` positions the stability bits for a given parameter slot; the `$stable` field stored on a class uses slot `0` (i.e. `bits shl 1`).
+`bitsForSlot` positions the stability bits for a given parameter slot. The `$stable` field stored on a class uses slot `0`, so `UNSTABLE` becomes `0b100 shl 1` = `0b1000` = `8`. That is where the `8` above comes from.
 
 #### Non-JVM Platforms
 
-For Native and JS targets, the compiler generates, at the package (top) level:
-1. A private backing field with a mangled, FQN-derived name (`<fqName>$stableprop_field` style)
-2. A property wrapping that field
-3. A separate getter **function** with a mangled name, registered as metadata-visible
+For Native and JS targets, `buildStabilityPropNonJvm()` puts everything at the package level instead, because there is no static field slot to hang it on. Three declarations are generated, all named from the class FQN with dots replaced by underscores:
+
+1. A private backing field named `<mangled fqName>$stable`
+2. A property named `<mangled fqName>$stableprop` that owns the field
+3. A separate getter **function** named `<mangled fqName>$stableprop_getter`, registered as metadata visible
 
 ```kotlin
-// Generated for Native/JS (names are derived from the class FQN)
-private val `com_example_Box$stableprop_field`: Int = /* computed */
+// Generated for Native and JS, for a class com.example.Box
+private val `com_example_Box$stable`: Int = /* computed */
 
 // Registered via metadataDeclarationRegistrar.registerFunctionAsMetadataVisible(...)
 @Deprecated(
@@ -1262,13 +1418,14 @@ private val `com_example_Box$stableprop_field`: Int = /* computed */
     message = "Synthetic declaration generated by the Compose compiler. Please do not use."
 )
 // @HiddenFromObjC is added only on Native targets
-fun `com_example_Box$stableprop_getter`(): Int =
-    `com_example_Box$stableprop_field`
+fun `com_example_Box$stableprop_getter`(): Int = `com_example_Box$stable`
 ```
 
 **Rationale:**
 
-A separate getter function is used (instead of a plain field getter) because `registerFunctionAsMetadataVisible` does not work for a field getter and there is no API to register properties as metadata-visible. Making the getter metadata-visible is what enables cross-module stability reads. On Native, the getter is additionally annotated with `@HiddenFromObjC`. Dependencies compiled with an older plugin that lack this getter are treated as `Unstable`, and a configuration warning is emitted advising an upgrade (to avoid extra recompositions on non-JVM targets).
+A separate getter function is used instead of a plain field getter because `registerFunctionAsMetadataVisible` does not work for a field getter, and there is no API to register properties as metadata visible. Making the getter metadata visible is what lets another module read the stability value at all.
+
+Reading the value back goes through `getRuntimeStabilityValue()`, which looks the getter up by name in the dependency's metadata. When the getter is missing, the dependency was built with an older plugin, and the raw field cannot be trusted: on Native there is no guarantee the package initializer has run, so the field may still hold uninitialized data. The one exception is a dependency whose compiler version string starts with `1.9`, where the field was emitted as a constant and can be read directly. Everything else is treated as `Unstable`, and `ClassStabilityTransformer` collects those classes and reports a `COMPOSE_CONFIGURATION_WARNING` listing them, advising an upgrade to avoid extra recompositions.
 
 ### 4.3 Annotation Processing
 
@@ -1276,11 +1433,10 @@ A separate getter function is used (instead of a plain field getter) because `re
 
 ```kotlin
 private fun IrAnnotationContainer.stabilityParamBitmask(): Int? =
-    (annotations.findAnnotation(ComposeFqNames.StabilityInferred)?.arguments[0] as? IrConst)
-        ?.value as? Int
+    annotations.findAnnotation(ComposeFqNames.StabilityInferred)?.getConstArgument("parameters")
 ```
 
-The annotation carries a single integer parameter representing the bitmask.
+The annotation carries a single integer parameter, declared in the Compose runtime as `StabilityInferred(val parameters: Int)`, and the lookup reads it by name.
 
 #### Annotation Generation
 
@@ -1297,18 +1453,27 @@ val annotation = IrAnnotationImpl(
     it.arguments[0] = irConst(parameterMask)
 }
 
-if (useK2 && cls.hasFirDeclaration()) {
+if (cls.hasFirDeclaration()) {
     context.metadataDeclarationRegistrar.addMetadataVisibleAnnotationsToElement(
         cls,
         annotation,
     )
 } else {
     cls.annotations += annotation
-    classStabilityInferredCollection?.addClass(cls, parameterMask)
 }
 ```
 
-The annotation is created as an `IrAnnotationImpl` (earlier compiler versions used `IrConstructorCallImpl`). Under K2 it is attached as a metadata-visible annotation; otherwise it is added directly to the class and also recorded in the `classStabilityInferredCollection`.
+The annotation is created as an `IrAnnotationImpl`, which replaced the `IrConstructorCallImpl` earlier compiler versions used. A class that has a FIR declaration behind it gets the annotation attached as metadata visible, so it survives into the module's metadata and can be read from another module. Classes without one, such as declarations synthesized later in the pipeline, get the annotation added to the IR node directly.
+
+The field itself is only emitted for declarations another module could see:
+
+```kotlin
+if (cls.visibility.isPublicAPI || cls.visibility == DescriptorVisibilities.INTERNAL) {
+    cls.addStabilityMarkerField(stableExpr)
+}
+```
+
+`visitClass` skips the whole transform for enums, enum entries, interfaces, annotation classes, anonymous objects, `expect` declarations, inner classes, file classes, companions, inline class types, and anything neither public nor internal.
 
 ### 4.4 Normalization Process
 
@@ -1362,7 +1527,7 @@ fun Stability.normalize(): Stability {
 1. **Flatten Combined**: Recursively expand nested `Combined` instances
 2. **Remove Unknown**: `Unknown` elements are discarded (treated as uncertain)
 3. **Deduplicate Parameters**: Keep only unique type parameters
-4. **Short-circuit on Unstable**: Return immediately if any `Certain(false)` found
+4. **Short circuit on Unstable**: return immediately if any `Certain(false)` is found
 5. **Collect Runtime and Parameter**: Preserve these for runtime checks
 
 **Result Types:**
@@ -1371,7 +1536,7 @@ fun Stability.normalize(): Stability {
 
 ## Chapter 5: Case Studies
 
-### 5.1 Primitive and Built-in Types
+### 5.1 Primitive and Standard Library Types
 
 #### Integer Types
 
@@ -1404,9 +1569,9 @@ val f: (Int) -> String = { it.toString() }
 Function types are stable because:
 1. Function references are immutable
 2. Capturing lambdas capture immutable values (or create new closures)
-3. Function equality is well-defined
+3. Function equality is defined by reference
 
-### 5.2 User-Defined Classes
+### 5.2 User Defined Classes
 
 #### Simple Data Class
 
@@ -1504,21 +1669,41 @@ val pair: Pair<Int, String>
 
 #### Nested Generic Types
 
+A generic field whose type is itself generic is where the inference most often surprises people:
+
 ```kotlin
 class Container<T>(val items: List<T>)
 
 // Analysis:
 // 1. Field analysis:
 //    - items: List<T>
-//      - List is known stable construct (mask = 0b1)
-//      - Check type arg T → Parameter(T)
+//      - List is an interface, so it never reaches member analysis
+//      - Result: Unknown(List)
+// 2. Stable + Unknown(List) = Unknown(List)
+// 3. Unknown is not expressible, so there is no runtime check to emit
+// Result: @StabilityInferred(parameters = 0), $stable = 8 (unstable)
+```
+
+`List` is not in `KnownStableConstructs`, and it is an interface, so the type argument is never even examined. `Container<String>` is unstable for the same reason `Container<Counter>` is. The compiler's own golden test records exactly this for `class X<T>(val p1: List<T>)`.
+
+Swapping in a type the compiler does know changes the outcome:
+
+```kotlin
+import kotlinx.collections.immutable.ImmutableList
+
+class Container<T>(val items: ImmutableList<T>)
+
+// Analysis:
+// 1. Field analysis:
+//    - items: ImmutableList<T>
+//      - "kotlinx.collections.immutable.ImmutableList" to 0b1 in KnownStableConstructs
+//      - bit 0 is set, so the type argument is checked
+//      - T has no substitution here → Parameter(T)
 // 2. Result: Combined([Parameter(T)])
 
 // Instantiation:
 val container: Container<String>
-// items: List<String>
-// List stability depends on String
-// stabilityOf(String) = Stable
+// Substitute T → String, stabilityOf(String) = Stable
 // Result: Stable
 ```
 
@@ -1530,30 +1715,35 @@ val container: Container<String>
 // Library module (compiled separately)
 @StabilityInferred(parameters = 0b1)
 class LibraryBox<T>(val value: T) {
-    companion object {
-        @JvmField
-        val $stable: Int = 0
-    }
+    val $stable: Int = 0 // synthetic static final field on the class
 }
 
 // Your module
-fun useLibraryBox(box: LibraryBox<Int>) {
-    // Analysis:
-    // 1. box: LibraryBox<Int>
-    // 2. LibraryBox is external
-    // 3. Has @StabilityInferred(0b1)
-    // 4. Create Stability.Runtime(LibraryBox)
-    // 5. Check bit 0 (T parameter)
-    // 6. Add stabilityOf(Int) = Stable
-    // Result: Combined([Runtime(LibraryBox), Stable])
-    // At runtime: check LibraryBox.$stable field
-}
+@Composable
+fun UseLibraryBox(box: LibraryBox<StableClass>) { /* ... */ }
+
+// Analysis:
+// 1. LibraryBox is public and lives in another file, and the target is JVM
+// 2. forcedToUseRuntimeStability is true -> Stability.Runtime(LibraryBox)
+// 3. mask is null, so every type argument is folded in
+// 4. stabilityOf(StableClass) -> Runtime(StableClass)
+// Result, after normalize(): Combined([Runtime(LibraryBox), Runtime(StableClass)])
 ```
+
+At the call site that becomes a single expression, which the compiler's golden tests show verbatim:
+
+```kotlin
+UseLibraryBox(LibraryBox(StableClass()), %composer, LibraryBox.%stable or StableClass.%stable)
+```
+
+There is a detail here worth stopping on. On JVM the recorded `@StabilityInferred` bitmask is not what selected the type argument. `forcedToUseRuntimeStability` is checked *before* the external stub branch, and it passes `mask = null`, so **every** type argument is folded in regardless of what the bitmask says. The compiler's own golden output makes this visible: `SingleParamNonProp` is compiled with `@StabilityInferred(parameters = 2)`, meaning no type parameter affects its stability, and the call site still emits `SingleParamNonProp.%stable or StableClass.%stable`.
+
+The recorded bitmask is consulted on the branch below it, which is reached when the target is not JVM, or when the class is neither public nor internal. The extra type arguments on JVM cost a few `or` operations and can only make a result more conservative, never less, which is the trade the compiler takes for incremental safety.
 
 #### External Class Without Annotation
 
 ```kotlin
-// Third-party library (no Compose compiler)
+// Third party library (no Compose compiler)
 class ThirdPartyType(val data: String)
 
 // Your module
@@ -1604,7 +1794,9 @@ class Screen(val viewModel: BaseViewModel)
 // Result: Stability.Unknown(BaseViewModel)
 ```
 
-A non-final class seeds as `Unknown`. If it had concrete `val` properties with backing fields, those would still be combined in — but the `Unknown` seed keeps the overall result uncertain unless something resolves it.
+A non final class seeds as `Unknown`. Concrete `val` properties with backing fields are still combined in, but the `Unknown` seed keeps the overall result uncertain unless something resolves it.
+
+This trace assumes `BaseViewModel` and `Screen` are in the same file. On JVM, a public `BaseViewModel` in a different file never reaches member analysis at all: Phase 9 intercepts it and returns `Runtime` instead.
 
 #### Interface with @Stable
 
@@ -1634,14 +1826,20 @@ class Screen(val repo: StableRepository)
 open class Base(val id: Int)
 class Derived(val name: String) : Base(0)
 
+// Analysis of Base:
+// 1. Base is open, so modality != FINAL → seed is Unknown(Base)
+// 2. Field id: Int → Stable
+// 3. Unknown(Base) + Stable = Unknown(Base)
+// Result: Stability.Unknown(Base)
+
 // Analysis of Derived:
-// 1. Field analysis:
-//    - name: String → Stable
-// 2. Check superclass: Base
-//    - Field id: Int → Stable
-// 3. Combine: Stable + Stable = Stable
+// 1. Derived is final → seed is Stable
+// 2. Field name: String → Stable
+// 3. Check superclass: Base → Unknown, so it is dropped
 // Result: Stability.Certain(stable = true)
 ```
+
+An open superclass resolving to `Unknown` is dropped rather than combined in. Without that rule every subclass of an open class would inherit the uncertainty of a class that is perfectly stable on its own.
 
 #### Unstable Inheritance
 
@@ -1705,9 +1903,9 @@ class ImmutableData(val value: String)
 2. No mutable fields (even private)
 3. `equals()` implements structural equality
 
-#### Compiler-Level Differences: @Stable vs @Immutable
+#### Compiler Level Differences: @Stable vs @Immutable
 
-While both annotations mark types as stable for recomposition skipping, there is one significant compiler-level difference.
+Both annotations mark types as stable for recomposition skipping, and there is one difference in how the compiler treats them.
 
 **Stability Inference Treatment**
 
@@ -1719,29 +1917,42 @@ fun IrAnnotationContainer.hasStableMarker(): Boolean =
 ```
 
 Both result in:
-- Same stability inference (types marked as `Stability.Certain(stable = true)`)
-- Same `@StabilityInferred` annotation generation
-- Same `$stable` runtime field generation
-- Same recomposition skipping behavior
+- The same stability inference, `Stability.Certain(stable = true)`
+- The same `$stable` field, emitted as the constant `STABLE`
+- The same recomposition skipping behavior
+
+Neither gets a `@StabilityInferred` annotation. `ClassStabilityTransformer.visitClass` returns as soon as it sees a marker:
+
+```kotlin
+if (declaration.hasStableMarker()) {
+    metrics.recordClass(declaration, marked = true, stability = Stability.Stable)
+    cls.addStabilityMarkerField(irConst(STABLE))
+    return cls
+}
+```
+
+There is nothing to infer, so there is no bitmask to record. The compiler's golden output shows exactly that, a `@Stable` class carrying `val %stable: Int = 0` and no `@StabilityInferred` line.
 
 **Static Expression Optimization (Key Difference)**
 
 `@Immutable` has special treatment for static expression detection.
 
 ```kotlin
-private fun IrConstructorCall.isStatic(): Boolean {
-    // special case for inline classes
+private fun IrConstructorCall.isStatic(fileContainingDependent: IrFile?): Boolean {
+    // special case constructors of inline classes as static if their underlying
+    // value is static.
     if (type.isInlineClassType()) {
-        return stabilityInferencer.stabilityOf(type.unboxInlineClass()).knownStable() &&
-                arguments[0]?.isStatic() == true
+        return stabilityInferencer.stabilityOf(
+            type.unboxInlineClass(), fileContainingDependent
+        ).knownStable() &&
+                arguments[0]?.isStatic(fileContainingDependent) == true
     }
 
-    // @Immutable constructors with static args are static
-    if (symbol.owner.parentAsClass.hasAnnotationSafe(ComposeFqNames.Immutable)) {
-        return areAllArgumentsStatic()
+    // If a type is immutable, then calls to its constructor are static if all of
+    // the provided arguments are static.
+    if (symbol.owner.parentAsClass.hasAnnotation(ComposeFqNames.Immutable)) {
+        return areAllArgumentsStatic(fileContainingDependent)
     }
-
-    // @Stable constructors are NOT considered static
     return false
 }
 ```
@@ -1756,26 +1967,19 @@ data class ImmutablePoint(val x: Int, val y: Int)
 data class StablePoint(val x: Int, val y: Int)
 
 @Composable
-fun Example() {
-    // Static expression - enables additional optimizations
-    val immutable = ImmutablePoint(10, 20)
-
-    // NOT a static expression - standard optimizations only
-    val stable = StablePoint(10, 20)
-
-    // Lambda with immutable capture can be more aggressively memoized
-    val lambda1 = { immutable.x }  // Better optimization
-
-    // Lambda with stable capture has standard memoization
-    val lambda2 = { stable.x }      // Standard optimization
-}
+fun Chart(
+    // @static in the compiler report: the constructor call is evaluated once
+    origin: ImmutablePoint = ImmutablePoint(0, 0),
+    // @dynamic: the call is re-evaluated whenever the default is taken
+    anchor: StablePoint = StablePoint(0, 0),
+) { /* ... */ }
 ```
 
-**Optimization Benefits of Static Expressions:**
+**What staticness buys:**
 
-1. **Lambda Memoization**: Static captures don't prevent lambda singleton optimization
-2. **Default Parameters**: Static defaults can be computed at compile time
-3. **Remember Optimization**: Compiler may skip unnecessary remember calls for static values
+1. **Default parameters**: a `@static` default is hoisted out of the defaults group, so the composable does not re-evaluate it on every composition. The `-composables.txt` report tags every default as `@static` or `@dynamic`, which makes the difference easy to see.
+2. **Intrinsic remember**: a static argument is known not to change, so the comparison it would need can be folded away instead of costing a slot.
+3. **Lambda memoization**: a lambda that only captures static values has nothing that can change, so it does not need a `remember` wrapper keyed on its captures.
 
 **Summary Table:**
 
@@ -1787,9 +1991,9 @@ fun Example() {
 | Lambda capture optimization | Standard | Enhanced |
 | Semantic contract | Allows private mutability | Truly immutable |
 
-The compiler treats `@Immutable` as a stronger guarantee that enables additional compile-time optimizations, particularly for static expression evaluation and lambda memoization.
+The compiler treats `@Immutable` as the stronger guarantee, and that extra guarantee buys compile time evaluation of constructor calls, which then feeds static expression detection and lambda memoization.
 
-#### @StableMarker Meta-Annotation
+#### @StableMarker Meta Annotation
 
 Create custom stability markers:
 
@@ -1806,7 +2010,7 @@ class CustomType(val data: String)
 
 #### File Format
 
-Create a [Stability configuration file](https://developer.android.com/develop/ui/compose/performance/stability/fix#configuration-file), `stability_config.conf`:
+Create a [stability configuration file](https://developer.android.com/develop/ui/compose/performance/stability/fix#configuration-file), `stability_config.conf`. `StabilityConfigParser` reads it line by line, skipping blank lines and lines that start with `//`. A comment after a pattern is a parse error, not a comment:
 
 ```
 // Single class
@@ -1815,7 +2019,7 @@ com.example.ExternalType
 // Package wildcard
 com.example.models.**
 
-// Single-segment wildcard
+// Single segment wildcard
 com.example.*.data
 
 // Generic parameter inclusion
@@ -1831,10 +2035,22 @@ com.example.Complex<*,_,*>
 #### Pattern Syntax
 
 **Wildcard Rules:**
-- `*`: Matches single package segment
-- `**`: Matches multiple package segments
-- `<*>`: Generic parameter affects stability
-- `<_>`: Generic parameter ignored for stability
+- `*`: matches a single package segment
+- `**`: matches multiple package segments
+- `<*>`: the generic parameter affects stability
+- `<_>`: the generic parameter is ignored for stability
+
+A pattern matches more than the class named. `FqNameMatcherCollection.matches` checks the class's own FQN *and* every supertype FQN, so listing a base class or an interface makes every type that extends it stable too:
+
+```kotlin
+fun matches(name: FqName?, superTypes: List<IrType>): Boolean {
+    // ...
+    return matcherTree.findFirstPositiveMatcher(name) != null ||
+            superTypeNames.any { matcherTree.findFirstPositiveMatcher(it) != null }
+}
+```
+
+That is convenient for a sealed hierarchy and a trap for a broad interface. Patterns are stored in a tree keyed by package segment, so a large configuration file does not slow compilation down much.
 
 **Generic Parameter Encoding:**
 
@@ -1849,13 +2065,41 @@ Container<*,_,*>
 
 #### Gradle Configuration
 
-To enable this feature, pass the path of the configuration file to the composeCompiler options block of the [Compose compiler Gradle plugin](https://developer.android.com/develop/ui/compose/compiler) configuration.
+Pass the configuration file to the `composeCompiler` block of the [Compose compiler Gradle plugin](https://developer.android.com/develop/ui/compose/compiler):
 
 ```kotlin
 composeCompiler {
-  stabilityConfigurationFile = rootProject.layout.projectDirectory.file("stability_config.conf")
+    stabilityConfigurationFiles.addAll(
+        rootProject.layout.projectDirectory.file("stability_config.conf"),
+    )
 }
 ```
+
+The older singular `stabilityConfigurationFile` property still exists, but it is deprecated at `DeprecationLevel.ERROR` and is scheduled for removal in Kotlin 2.5.0, so new builds should use `stabilityConfigurationFiles`.
+
+#### Feature Flags
+
+The same block carries the compiler's feature flags. Each flag has a default in the plugin, and the Gradle option only records a deviation from it:
+
+```kotlin
+enum class FeatureFlag(val featureName: String, val default: Boolean) {
+    StrongSkipping("StrongSkipping", default = true),
+    IntrinsicRemember("IntrinsicRemember", default = true),
+    OptimizeNonSkippingGroups("OptimizeNonSkippingGroups", default = true),
+    PausableComposition("PausableComposition", default = true),
+    ;
+}
+```
+
+To turn one off, add its disabled form:
+
+```kotlin
+composeCompiler {
+    featureFlags = setOf(ComposeFeatureFlag.StrongSkipping.disabled())
+}
+```
+
+The older single purpose options that used to control these, such as `enableStrongSkippingMode`, `enableIntrinsicRemember`, and `enableNonSkippingGroupOptimization`, are deprecated at `DeprecationLevel.ERROR` alongside `stabilityConfigurationFile`.
 
 ### 6.3 Compiler Reports
 
@@ -1870,47 +2114,82 @@ composeCompiler {
 
 #### Generated Files
 
-**`<module>-classes.txt`**: Class stability analysis
+`reportsDestination` produces `<module>-classes.txt`, `<module>-composables.txt`, and `<module>-composables.csv`, plus `<module>-composables.log` when the compiler logged anything. `metricsDestination` produces `<module>-module.json`. In the prefix, dots in the module name become underscores and angle brackets are removed.
+
+**`<module>-classes.txt`**: class stability analysis, one entry per class, each field marked `stable`, `unstable`, or `runtime`. Inferred classes also get a `<runtime stability>` line showing the expression used to resolve stability at runtime:
 
 ```
-stable class User {
+stable class com.example.User {
   stable val id: Int
   stable val name: String
+  <runtime stability> = Stable
 }
 
-unstable class Counter {
+unstable class com.example.Counter {
   unstable var count: Int
+  <runtime stability> = Unstable
 }
 
-runtime stable class Box {
-  stable val value: T
+runtime class com.example.Box {
+  runtime val value: T
+  <runtime stability> = Parameter(T)
 }
 ```
 
-**`<module>-composables.txt`**: Composable function analysis
+A class marked with `@Stable` or `@Immutable` is printed without the `<runtime stability>` line, since nothing was inferred.
+
+**`<module>-composables.txt`**: composable function analysis, printed in pseudo Kotlin. Each parameter sits on its own line with no separator, and each default expression is tagged `@static` or `@dynamic`:
 
 ```
-restartable skippable scheme("[androidx.compose.ui.UiComposable]") fun UserProfile(
-  stable user: User
-)
-
-restartable scheme("[androidx.compose.ui.UiComposable]") fun Counter(
-  unstable counter: Counter
+restartable skippable fun com.example.Image(
+  unstable bitmap: ImageBitmap
+  stable contentDescription: String?
+  stable modifier: Modifier? = @static Companion
+  stable alignment: Alignment? = @dynamic Companion.Center
 )
 ```
 
-**`<module>-module.json`**: Metrics summary
+`restartable` marks a function that can serve as a recomposition scope, and `skippable` marks one that can be skipped when its arguments compare equal. The two are related but separate. A function has to be restartable to be skippable, and `shouldBeRestartable()` already rules out inline functions, functions with a non Unit return type, `@NonRestartableComposable`, and functions with explicit groups. Among what is left, a `restartable` entry with no `skippable` usually means `@NonSkippableComposable`, since strong skipping makes the rest skippable by default.
+
+**`<module>-composables.csv`**: the same per function data in a form you can drop into a spreadsheet.
+
+**`<module>-module.json`**: module wide counters, useful mostly as a number to track across builds:
 
 ```json
 {
-  "skippableComposables": 45,
-  "restartableComposables": 50,
-  "readonlyComposables": 5,
+  "skippableComposables": 53,
+  "restartableComposables": 60,
+  "readonlyComposables": 1,
   "totalComposables": 100,
-  "restartGroups": 50,
-  "totalGroups": 75
+  "restartGroups": 60,
+  "totalGroups": 139,
+  "staticArguments": 25,
+  "certainArguments": 138,
+  "knownStableArguments": 377,
+  "knownUnstableArguments": 25,
+  "unknownStableArguments": 24,
+  "totalArguments": 426,
+  "markedStableClasses": 8,
+  "inferredStableClasses": 28,
+  "inferredUnstableClasses": 0,
+  "inferredUncertainClasses": 0,
+  "effectivelyStableClasses": 36,
+  "totalClasses": 36,
+  "memoizedLambdas": 40,
+  "singletonLambdas": 6,
+  "singletonComposableLambdas": 4,
+  "composableLambdas": 49,
+  "totalLambdas": 81,
+  "featureFlags": {
+    "StrongSkipping": true,
+    "IntrinsicRemember": true,
+    "OptimizeNonSkippingGroups": true,
+    "PausableComposition": true
+  }
 }
 ```
+
+The ratio between `certainArguments` and `totalArguments` tells you how much stability metadata is actually reaching composable calls, which is usually the most actionable number in the file.
 
 ### 6.4 Common Issues and Solutions
 
@@ -1936,7 +2215,8 @@ data class UserState(val loading: Boolean)
 
 ```kotlin
 class ViewModel(val items: MutableList<String>)
-// MutableList is unstable
+// MutableList is an interface, so it resolves to Unknown,
+// which makes the enclosing class uncertain
 ```
 
 **Solution:**
@@ -1953,9 +2233,11 @@ class ViewModel(val items: ImmutableList<String>)
 ```kotlin
 class ViewModel(val items: List<String>)
 // List is an interface with Unknown stability by default
-// To make it stable, add to stability-config.txt:
+// To make it stable, add to stability_config.conf:
 // kotlin.collections.List
 ```
+
+Declaring `kotlin.collections.List` stable is a promise you make on behalf of every list in the module, including the `MutableList` instances that are also `List`. It is only safe if you never mutate a list after handing it to a composable.
 
 #### Issue 3: Interface Parameters
 
@@ -1992,7 +2274,7 @@ fun Screen(source: ConcreteDataSource) {
 **Problem:**
 
 ```kotlin
-// Third-party library without Compose support
+// Third party library without Compose support
 class LibraryClass(val data: String)
 
 @Composable
@@ -2003,7 +2285,7 @@ fun Display(obj: LibraryClass) {
 
 **Solution:**
 
-Add to `stability-config.txt`:
+Add to `stability_config.conf`:
 
 ```
 com.thirdparty.LibraryClass
@@ -2099,7 +2381,7 @@ data class SymbolForAnalysis(
     val typeParameters: List<IrTypeArgument?>,
     // The file containing the element that initiated this stabilityOf request tree.
     // Two identical symbols analyzed from different entry files are distinct keys,
-    // which is what keeps the per-file caching/runtime-stability behavior correct.
+    // which is what keeps the per file caching and runtime stability behavior correct.
     val analysisEntryFile: IrFile?,
 )
 
@@ -2112,7 +2394,7 @@ if (currentlyAnalyzing.contains(fullSymbol))
 
 The `currentlyAnalyzing` set tracks the analysis stack to detect cycles. The `analysisEntryFile` is part of the key because the same type can resolve to different stability depending on which file initiated the analysis (see Phase 9).
 
-#### Example: Self-Referential Type
+#### Example: Self Referential Type
 
 ```kotlin
 class Node(val value: Int, val next: Node?)
@@ -2144,7 +2426,7 @@ This conservative approach ensures algorithm termination.
 
 #### Protobuf Types
 
-**Detection:** 
+**Detection:**
 
 ```kotlin
 private fun IrClass.isProtobufType(): Boolean {
@@ -2168,20 +2450,33 @@ if (member.isVar && !member.isDelegated)
     return Stability.Unstable
 ```
 
-Delegated `var` properties are not automatically unstable. The stability depends on the delegate implementation.
-
-**Example:**
+A delegated `var` escapes the immediate `Unstable` return, and the backing field it does have holds the delegate, not the value. So the class inherits the delegate's stability:
 
 ```kotlin
-class WithDelegate {
-    var value: String by mutableStateOf("")
-    // Delegated to MutableState
-    // Compose tracks state changes
-    // Can be stable with proper delegate
+@Stable
+class StableDelegate { /* getValue, setValue */ }
+
+class UnstableDelegate {
+    var value: Int = 0
+    /* getValue, setValue */
 }
+
+class StableDelegateProp {
+    var p1 by StableDelegate()
+}
+// @StabilityInferred(parameters = 1), $stable = 0
+
+class UnstableDelegateProp {
+    var p1 by UnstableDelegate()
+}
+// @StabilityInferred(parameters = 0), $stable = 8
 ```
 
-#### Inline Classes with Markers
+This is what makes `by mutableStateOf(...)` work. `MutableState` is `@Stable`, so a `var` delegated to it leaves the enclosing class stable, and the runtime still learns about writes because the state object notifies composition itself.
+
+#### Value Classes with Markers
+
+Both value class branches start with the same check:
 
 ```kotlin
 if (inlineClassDeclaration.hasStableMarker()) {
@@ -2189,7 +2484,7 @@ if (inlineClassDeclaration.hasStableMarker()) {
 }
 ```
 
-Inline classes can override underlying type stability with annotations:
+A marker therefore overrides whatever the underlying types say:
 
 ```kotlin
 @JvmInline
@@ -2200,355 +2495,335 @@ value class Wrapper(val list: MutableList<Int>)
 // Result: Stable (developer responsibility)
 ```
 
+Note that `ClassStabilityTransformer` skips inline class types entirely, so a value class never gets a `$stable` field of its own. Its stability is resolved wherever it is used, by unwrapping it again.
+
 ## Chapter 8: Compiler Analysis System
+
+Stability inference is one half of what the Compose plugin does. The other half is a set of checkers that validate how composable functions are declared and called. Both halves used to be split across two frontends, and the older one is now gone: there is no `k1` package in the plugin anymore, and with it went `BindingTrace`, `WritableSlice`, and `TypeResolutionInterceptorExtension`. Everything the frontend does today runs on FIR, and everything the backend does runs on IR.
 
 ### 8.1 Analysis Infrastructure
 
-The Compose compiler stores per-element metadata during compilation and reads it back in later phases. There are two distinct mechanisms: **IR attributes** for the IR (backend/lowering) phase, and **WritableSlices** on the K1 frontend.
+The plugin needs to write down what it learned in one phase and read it back in a later one. It uses a different mechanism on each side of the compiler.
 
-> Note: most of Chapter 8 describes the **K1 (descriptor/PSI-based) frontend**, which is now the *legacy* path. K2/FIR is the default frontend and lives under the `k2/` package. The concepts below are still useful, but the exact APIs shown are mostly K1.
-
-#### IR Attributes: IR-phase Data Flow
+#### IR Attributes: Backend Data Flow
 
 `lower/ComposePluginAttributes.kt`
 
-In the IR phase the compiler no longer uses a `BindingContext`. Instead, metadata is attached directly to IR nodes via delegated **IR attribute / flag** properties (`irAttribute(...)` / `irFlag(...)`):
+In the IR phase, metadata is attached directly to IR nodes through delegated attribute and flag properties:
 
 ```kotlin
-// lower/ComposePluginAttributes.kt (illustrative)
-var IrExpression.isStaticExpression: Boolean by irFlag(/* ... */)
-var IrExpression.isStaticFunctionExpression: Boolean by irFlag(/* ... */)
-var IrElement.isComposableSingleton: Boolean by irFlag(/* ... */)
-var IrElement.isComposableSingletonClass: Boolean by irFlag(/* ... */)
-var IrElement.durableFunctionKey: KeyInfo? by irAttribute(/* ... */)
-var IrElement.hasTransformedLambda: Boolean by irFlag(/* ... */)
+internal var IrExpression.isStaticExpression: Boolean by irFlag(copyByDefault = true)
+internal var IrExpression.isStaticFunctionExpression: Boolean by irFlag(copyByDefault = true)
+internal var IrElement.isComposableSingleton: Boolean by irFlag(copyByDefault = true)
+internal var IrElement.isComposableSingletonClass: Boolean by irFlag(copyByDefault = true)
+internal var IrElement.durableFunctionKey: KeyInfo? by irAttribute(copyByDefault = true)
+internal var IrElement.hasTransformedLambda: Boolean by irFlag(copyByDefault = true)
+internal var IrFunction.functionMetrics: FunctionMetrics? by irAttribute(copyByDefault = true)
 ```
 
-These attributes carry critical metadata:
-- **isStaticExpression**: Marks expressions that can be evaluated at compile time
-- **durableFunctionKey**: Stores unique keys for functions to enable hot reload
-- **isComposableSingleton / isComposableSingletonClass**: Marks hoisted composable lambda singletons
+What each one carries:
 
-They are written and read as plain properties on the IR node, e.g. `expr.isStaticExpression = true` during analysis and `if (expr.isStaticExpression) { ... }` during lowering — no trace/context lookup is involved.
+- **isStaticExpression**: marks expressions whose value can be computed once instead of on every composition
+- **durableFunctionKey**: stores the stable identity of a function, which is what makes hot reload possible
+- **isComposableSingleton** and **isComposableSingletonClass**: mark composable lambdas that were hoisted into singletons
+- **functionMetrics**: the per function record that ends up in the compiler reports
 
-#### Frontend WritableSlices (K1)
+They read and write as plain properties on the node, so an analysis pass does `expr.isStaticExpression = true` and a later lowering does `if (expr.isStaticExpression) { ... }`. No lookup table sits in between. `copyByDefault = true` means the attribute survives when an IR node is copied, which matters because several lowerings rebuild functions wholesale.
 
-`k1/FrontendWritableSlices.kt`
+#### FIR Session Components: Frontend Data Flow
 
-On the K1 frontend, analysis results are recorded in a `BindingTrace` via `WritableSlice` keys:
+The frontend has no trace to record into. When a checker needs to remember something between calls, it stores it in a session component instead:
 
 ```kotlin
-object FrontendWritableSlices {
-    val INFERRED_COMPOSABLE_DESCRIPTOR = WritableSlice<FunctionDescriptor, Boolean>()
-    val LAMBDA_CAPABLE_OF_COMPOSER_CAPTURE = WritableSlice<FunctionDescriptor, Boolean>()
-    val INFERRED_COMPOSABLE_LITERAL = WritableSlice<KtLambdaExpression, Boolean>()
-    val COMPOSE_LAZY_SCHEME = WritableSlice<Any, LazyScheme>()
+internal class ComposableTargetSessionStorage(session: FirSession) : FirExtensionSessionComponent(session) {
+    // parent links, lambda to expression links, and a cache of LazyScheme per FirElement
 }
+
+private val FirSession.composableTargetSessionStorage by FirSession.sessionComponentAccessor<ComposableTargetSessionStorage>()
 ```
 
-These slices are stored in the `BindingContext`/`BindingTrace` that persists throughout K1 frontend analysis:
-
-```kotlin
-// During analysis
-trace.record(FrontendWritableSlices.INFERRED_COMPOSABLE_DESCRIPTOR, descriptor, true)
-
-// Reading back
-val inferred = trace.bindingContext[
-    FrontendWritableSlices.INFERRED_COMPOSABLE_DESCRIPTOR, descriptor
-]
-```
+The component is registered with the rest of the plugin's FIR extensions and lives for the duration of the session. Applier inference is the only part of the frontend that needs this; the call and declaration checkers are stateless.
 
 ### 8.2 Composable Call Validation
 
-`k1/ComposableCallChecker.kt`
+`k2/ComposableCallChecker.kt`
 
-The composable call checker ensures composable functions are only called from valid contexts.
-
-#### Context Checking Algorithm
-
-The checker walks up the PSI tree from each composable call site:
+This file holds two checkers, one for calls and one for property reads, both wired into the FIR checker infrastructure:
 
 ```kotlin
-override fun check(resolvedCall: ResolvedCall<*>, reportOn: PsiElement, context: CallCheckerContext) {
-    // Walk up PSI tree to find composable context
-    var node: PsiElement? = reportOn
-    while (node != null) {
-        when (node) {
-            is KtLambdaExpression -> {
-                val descriptor = bindingContext[BindingContext.FUNCTION, node.functionLiteral]
-                if (descriptor?.isComposableCallable() == true) {
-                    return // Valid: inside composable lambda
-                }
-            }
+object ComposablePropertyAccessExpressionChecker : FirPropertyAccessExpressionChecker(MppCheckerKind.Common)
+object ComposableFunctionCallChecker : FirFunctionCallChecker(MppCheckerKind.Common)
+```
 
-            is KtFunction -> {
-                val descriptor = bindingContext[BindingContext.FUNCTION, node]
-                if (descriptor?.isComposableCallable() == true) {
-                    return // Valid: inside composable function
-                }
-            }
+The function call checker dispatches on what the callee turned out to be:
 
-            is KtPropertyAccessor -> {
-                val descriptor = bindingContext[BindingContext.PROPERTY_ACCESSOR, node]
-                if (descriptor?.isComposableCallable() == true) {
-                    return // Valid: inside composable property
-                }
-            }
+```kotlin
+context(context: CheckerContext, reporter: DiagnosticReporter)
+override fun check(expression: FirFunctionCall) {
+    val calleeFunction = expression.calleeReference.toResolvedFunctionSymbol()
+        ?: return
 
-            is KtTryExpression -> {
-                // Check if composable call is inside try/catch
-                if (node.tryBlock.isAncestor(reportOn)) {
-                    context.trace.report(ILLEGAL_TRY_CATCH_AROUND_COMPOSABLE.on(reportOn))
-                    return
-                }
-            }
+    // K2 propagates annotation from the fun interface method to the constructor.
+    // https://youtrack.jetbrains.com/issue/KT-47708.
+    if (calleeFunction.origin == FirDeclarationOrigin.SamConstructor) return
 
-            is KtClass, is KtFile -> {
-                // Reached non-composable boundary
-                context.trace.report(COMPOSABLE_INVOCATION.on(reportOn))
+    if (calleeFunction.isComposable(context.session)) {
+        checkComposableCall(expression, calleeFunction, context, reporter)
+    } else if (calleeFunction.callableId.isInvoke()) {
+        checkInvoke(expression, context, reporter)
+    }
+}
+```
+
+#### Scope Walking Algorithm
+
+The question the checker has to answer is whether the call sits inside something composable. It answers it by walking outward from the call site through `CheckerContext.containingElements`, which is the stack of FIR elements the checker is currently nested in. There is no PSI involved: the compiler stopped generating PSI outside the IDE, and the last PSI condition was removed from this checker along with it.
+
+```kotlin
+private inline fun CheckerContext.visitCurrentScope(
+    visitInlineLambdaParameter: (FirValueParameter) -> Unit,
+    visitAnonymousFunction: (FirAnonymousFunction) -> Unit = {},
+    visitFunction: (FirFunction) -> Unit = {},
+    visitTryExpression: (FirTryExpression, FirElement) -> Unit = { _, _ -> },
+    visitFunctionCall: (FirFunctionCall) -> Unit = {},
+) {
+    for ((elementIndex, element) in containingElements.withIndex().reversed()) {
+        when (element) {
+            is FirAnonymousFunction -> {
+                if (element.inlineStatus == InlineStatus.Inline) {
+                    findValueParameterForLambdaAtIndex(elementIndex)?.let(visitInlineLambdaParameter)
+                }
+                visitAnonymousFunction(element)
+                if (element.inlineStatus != InlineStatus.Inline) return
+            }
+            is FirFunction -> {
+                visitFunction(element)
                 return
             }
+            is FirTryExpression -> { /* ... */ }
+            is FirFunctionCall -> visitFunctionCall(element)
+            // ...
+            is FirDeclaration -> return
         }
-        node = node.parent
     }
 }
 ```
 
-#### Inline Lambda Restrictions
+Two details make this work. The walk goes `reversed()`, so it visits the innermost element first and moves outward. And the function is `inline`, so a bare `return` inside one of the callbacks returns from the enclosing checker function, not just from the loop. That is how the checker says "this call is fine, stop looking" without threading a result value back out.
 
-Special handling for inline functions with composable lambda parameters:
+An `Inline` lambda is transparent: the walk passes straight through it, because a composable call inside an inline lambda executes in the caller's scope. `NoInline` and `CrossInline` lambdas stop the walk, because their body may run at any time.
+
+Everything else falls into the final `is FirDeclaration -> return` branch, which ends the walk without finding a composable scope. A few element kinds are listed above it precisely so they do *not* end the walk: `FirProperty` and `FirValueParameter`, because the call may have come from an initializer or a default value; `FirAnonymousObject` and `FirAnonymousInitializer`; and a `FirField` whose origin is `Synthetic.DelegateField`, which FIR creates for constructor delegation.
+
+#### Validation Order
+
+`checkComposableCall` runs the walk with five callbacks, and each one handles a rule:
+
+1. **Zero argument `key`**: a call to `androidx.compose.runtime.key` with a single argument has a group key but no body, which is always a mistake. Reports `KEY_CALL_WITH_NO_ARGUMENTS`.
+2. **`@DisallowComposableCalls` lambdas**: if the enclosing inline lambda's parameter type carries the annotation, reports `CAPTURED_COMPOSABLE_INVOCATION`.
+3. **Composable scopes**: a lambda whose function type kind is `ComposableFunction`, or a function annotated `@Composable`, ends the check successfully.
+4. **try blocks**: reports `ILLEGAL_TRY_CATCH_AROUND_COMPOSABLE`.
+5. **runCatching**: reports `ILLEGAL_RUN_CATCHING_AROUND_COMPOSABLE`.
+6. **Fall through**: if the walk finished without finding a composable scope, reports `COMPOSABLE_INVOCATION`.
+
+The try check is narrower than its name suggests. Composable calls are legal inside `catch` and `finally`, and only the `try` block itself is rejected:
 
 ```kotlin
-private fun checkInlineLambdaCall(
-    resolvedCall: ResolvedCall<*>,
-    reportOn: PsiElement,
-    context: CallCheckerContext
+visitTryExpression = { tryExpression, container ->
+    // Only report an error if the composable call happens inside of the `try`
+    // block. Composable calls are allowed inside of `catch` and `finally` blocks.
+    if (container !is FirCatch && tryExpression.finallyBlock != container) {
+        reporter.reportOn(
+            tryExpression.source,
+            ComposeErrors.ILLEGAL_TRY_CATCH_AROUND_COMPOSABLE,
+            context
+        )
+    }
+}
+```
+
+`container` is the child of the try expression through which the walk arrived, which is what lets the checker tell the three blocks apart. The reason for the rule is that composition state is written as the composable executes. An exception thrown mid execution leaves the slot table partly updated, and the `catch` block would then be running against a composition that no longer matches the code that produced it. `runCatching` is rejected for the same reason, since it is a `try` in disguise.
+
+#### Readonly Composables
+
+`@ReadOnlyComposable` promises that the body only performs read operations on the composer, which lets the compiler emit no group around it at all. Calling a normal composable from one would break that promise, so `checkComposableFunction` carries the call site source down and reports it:
+
+```kotlin
+if (function.hasComposableAnnotation(session)) {
+    if (function.hasReadOnlyComposableAnnotation(session) && nonReadOnlyCallInsideFunction != null) {
+        reporter.reportOn(nonReadOnlyCallInsideFunction, NONREADONLY_CALL_IN_READONLY_COMPOSABLE, context)
+    }
+    return ComposableCheckForScopeStatus.STOP
+}
+```
+
+The source is only non null when the callee is itself not readonly, so a readonly composable calling another readonly composable passes.
+
+#### Property Getters and Delegates
+
+A composable property is a getter, not a field, and a delegated composable property has extra limits:
+
+```kotlin
+if (function is FirPropertyAccessor && function.propertySymbol.hasDelegate) {
+    if (function.propertySymbol.isVar) {
+        reporter.reportOn(function.source, COMPOSE_INVALID_DELEGATE, context)
+    } else if (function.propertySymbol is FirRegularPropertySymbol) {
+        // Only local variables can be implicitly composable, for top-level or
+        // class-level declarations we require an explicit annotation.
+        reporter.reportOn(function.propertySymbol.source, COMPOSABLE_EXPECTED, context)
+    }
+    return ComposableCheckForScopeStatus.STOP
+}
+```
+
+A `var` delegate needs `setValue`, and a composable `setValue` has nowhere to run, so it is rejected outright. A `val` delegate at top level or class level has to be annotated rather than inferred, because its type is part of the declaration's public shape.
+
+#### Propagating @DisallowComposableCalls
+
+`checkInvoke` handles the inverse problem. When an inline function's lambda parameter is invoked from inside a `@DisallowComposableCalls` lambda, that restriction has to propagate to the parameter, otherwise a composable call could sneak through the invocation:
+
+```kotlin
+val param = (expression.dispatchReceiver as? FirPropertyAccessExpression)
+    ?.calleeReference
+    ?.toResolvedValueParameterSymbol()
+    ?: return
+if (param.resolvedReturnTypeRef.hasDisallowComposableCallsAnnotation(context.session) ||
+    !param.containingDeclarationSymbol.let { it is FirCallableSymbol && it.isInline }
 ) {
-    val descriptor = resolvedCall.resultingDescriptor
-
-    for ((parameter, argument) in resolvedCall.valueArguments) {
-        if (!parameter.type.isComposableType()) continue
-
-        if (parameter.hasDisallowComposableCalls()) {
-            // This lambda cannot contain composable calls
-            val lambda = argument.getLambdaExpression()
-            lambda?.forEachDescendantOfType<KtCallExpression> { call ->
-                if (call.isComposableCall()) {
-                    context.trace.report(
-                        CAPTURED_COMPOSABLE_INVOCATION.on(call, parameter, descriptor)
-                    )
-                }
-            }
-        }
-    }
+    return
 }
 ```
 
-**Example:**
-
-```kotlin
-inline fun runWithoutComposables(
-    @DisallowComposableCalls block: () -> Unit
-) = block()
-
-@Composable
-fun MyComposable() {
-    runWithoutComposables {
-        Text("Error")  // ERROR: Composable calls not allowed
-    }
-}
-```
-
-#### Type Compatibility Checking
-
-Validates that composable and non-composable function types match expected signatures:
-
-```kotlin
-override fun checkType(
-    expression: KtExpression,
-    expressionType: KotlinType,
-    expectedType: KotlinType,
-    context: CallCheckerContext
-) {
-    val isComposableExpression = expressionType.isComposableType()
-    val isComposableExpected = expectedType.isComposableType()
-
-    when {
-        isComposableExpression && !isComposableExpected -> {
-            // Trying to pass composable lambda where non-composable expected
-            if (!isInlineConversion(expression)) {
-                context.trace.report(
-                    TYPE_MISMATCH.on(expression, expectedType, expressionType)
-                )
-            }
-        }
-
-        !isComposableExpression && isComposableExpected -> {
-            // Trying to pass non-composable where composable expected
-            context.trace.report(
-                TYPE_MISMATCH.on(expression, expectedType, expressionType)
-            )
-        }
-    }
-}
-```
+If the parameter is not already annotated, the checker reports `MISSING_DISALLOW_COMPOSABLE_CALLS_ANNOTATION` naming both the parameter that needs the annotation and the one that imposed the restriction.
 
 ### 8.3 Declaration Validation
 
-Validates composable function and property declarations follow Compose rules.
-
 #### Composable Function Rules
 
-Key validation rules enforced:
+`k2/ComposableFunctionChecker.kt` is a `FirFunctionChecker`, and it runs the override checks before it even asks whether the function is composable:
 
-```kotlin
-class ComposableDeclarationChecker : DeclarationChecker {
-    override fun check(declaration: KtDeclaration, descriptor: DeclarationDescriptor, context: DeclarationCheckerContext) {
-        when (descriptor) {
-            is FunctionDescriptor -> checkFunction(descriptor, declaration, context)
-            is PropertyDescriptor -> checkProperty(descriptor, declaration, context)
-        }
-    }
+1. **Override consistency**: an override must match its parent on composability, otherwise `FirErrors.CONFLICTING_OVERLOADS`.
+2. **Applier scheme on overrides**: when both are composable, `!override.toScheme().canOverride(declaration.symbol.toScheme())` reports `COMPOSE_APPLIER_DECLARATION_MISMATCH`.
+3. **expect and actual**: a mismatch between the expect declaration and its actual reports `MISMATCHED_COMPOSABLE_IN_EXPECT_ACTUAL`.
 
-    private fun checkFunction(descriptor: FunctionDescriptor, declaration: KtDeclaration, context: DeclarationCheckerContext) {
-        // Rule 1: Composable functions cannot be suspend
-        if (descriptor.isComposableCallable() && descriptor.isSuspend) {
-            context.trace.report(COMPOSABLE_SUSPEND_FUN.on(declaration))
-        }
+The rest applies only to `@Composable` declarations:
 
-        // Rule 2: Main function cannot be composable
-        if (descriptor.isComposableCallable() && descriptor.name.asString() == "main") {
-            context.trace.report(COMPOSABLE_FUN_MAIN.on(declaration))
-        }
-
-        // Rule 3: Composability must be consistent in overrides
-        descriptor.overriddenDescriptors.forEach { overridden ->
-            if (descriptor.isComposableCallable() != overridden.isComposableCallable()) {
-                context.trace.report(
-                    CONFLICTING_OVERLOADS.on(declaration, listOf(descriptor, overridden))
-                )
-            }
-        }
-    }
-}
-```
+4. **suspend**: `COMPOSABLE_SUSPEND_FUN`. A suspend function can resume anywhere, and composition has to stay on the composition thread with its slot table positioned where it left off.
+5. **main**: `COMPOSABLE_FUN_MAIN`. There is no composer to pass in at the process entry point.
+6. **Default parameter values on open and abstract functions**: these need runtime support, so they are gated on language version through `ComposeLanguageFeature`, which declares `DefaultParametersInAbstractFunctions(LanguageVersion.KOTLIN_2_1)` and `DefaultParametersInOpenFunctions(LanguageVersion.KOTLIN_2_2)`. Below the required version they report `ABSTRACT_COMPOSABLE_DEFAULT_PARAMETER_VALUE` or `OPEN_COMPOSABLE_DEFAULT_PARAMETER_VALUE`. A dependency compiled before the support existed reports the warning `DEPRECATED_OPEN_COMPOSABLE_DEFAULT_PARAMETER_VALUE`.
+7. **`setValue` operator**: a composable `setValue` reports `COMPOSE_INVALID_DELEGATE`, matching the delegate rule in the call checker.
 
 #### Property Restrictions
 
-Composable properties have specific limitations:
+`k2/ComposablePropertyChecker.kt` holds two checkers. The first runs on any property whose getter or setter is annotated:
 
 ```kotlin
-private fun checkProperty(descriptor: PropertyDescriptor, declaration: KtDeclaration, context: DeclarationCheckerContext) {
-    if (!descriptor.isComposableCallable()) return
-
-    // Rule 1: Composable properties cannot have backing fields
-    if (descriptor.hasBackingField()) {
-        context.trace.report(COMPOSABLE_PROPERTY_BACKING_FIELD.on(declaration))
-    }
-
-    // Rule 2: Composable properties cannot be var (have setters)
-    if (descriptor.isVar) {
-        context.trace.report(COMPOSABLE_VAR.on(declaration))
-    }
-
-    // Rule 3: Composable delegates restricted to getValue only
-    if (declaration is KtProperty && declaration.hasDelegate()) {
-        if (descriptor.isVar) {
-            // setValue on composable delegate not allowed
-            context.trace.report(COMPOSE_INVALID_DELEGATE.on(declaration))
-        }
-    }
+if (declaration.isVar) {
+    reporter.reportOn(declaration.source, ComposeErrors.COMPOSABLE_VAR, context)
+}
+if (declaration.hasBackingField) {
+    reporter.reportOn(declaration.source, ComposeErrors.COMPOSABLE_PROPERTY_BACKING_FIELD, context)
 }
 ```
 
-#### Override Consistency
+Both come down to the same thing: a composable property is a function that runs during composition, so there is nothing for a field to hold and nothing for a setter to do.
 
-Ensures override hierarchies maintain consistent composability:
+The second, `ComposablePropertyReferenceChecker`, reports `COMPOSABLE_PROPERTY_REFERENCE` for a `::property` reference to a non delegated composable property. A property reference produces a `KProperty` object whose getter would have to be invoked outside composition.
+
+#### Composable Type Positions
+
+`k2/ComposableAnnotationChecker.kt` is a `FirResolvedTypeRefChecker`. It catches `@Composable` written on something that is not a function type:
 
 ```kotlin
-private fun checkOverrideConsistency(
-    descriptor: CallableDescriptor,
-    context: DeclarationCheckerContext
-) {
-    val isComposable = descriptor.isComposableCallable()
-
-    for (overridden in descriptor.overriddenDescriptors) {
-        val overriddenComposable = overridden.isComposableCallable()
-
-        if (isComposable != overriddenComposable) {
-            context.trace.report(
-                CONFLICTING_OVERLOADS.on(
-                    descriptor.source.getPsi()!!,
-                    listOf(descriptor, overridden)
-                )
-            )
-        }
-
-        // Check applier compatibility (scheme-based): the overridden declaration's
-        // scheme must be able to override this declaration's scheme.
-        if (!overridden.toScheme().canOverride(descriptor.toScheme())) {
-            context.trace.report(
-                COMPOSE_APPLIER_DECLARATION_MISMATCH.on(
-                    descriptor.source.getPsi()!!
-                )
-            )
-        }
-    }
+if (typeRef !is FirErrorTypeRef && !typeRef.coneType.isComposableFunction(session)) {
+    reporter.reportOn(composableAnnotation.source, COMPOSABLE_INAPPLICABLE_TYPE, typeRef.coneType, context)
 }
 ```
+
+It makes one exception, for the synthetic array type FIR creates around a `vararg` parameter, since the annotation there belongs to the element type.
+
+#### Diagnostic Severity
+
+`k2/ComposeErrors.kt` declares 24 diagnostic factories, and the severity comes from which builder they use: `error0` through `error4` produce errors, `warning0` through `warning4` produce warnings. The split is worth knowing, because the applier diagnostics are the ones people most often expect to fail a build:
+
+| Diagnostic | Severity |
+|---|---|
+| `COMPOSABLE_INVOCATION` | Error |
+| `COMPOSABLE_EXPECTED` | Error |
+| `CAPTURED_COMPOSABLE_INVOCATION` | Error |
+| `NONREADONLY_CALL_IN_READONLY_COMPOSABLE` | Error |
+| `ILLEGAL_TRY_CATCH_AROUND_COMPOSABLE` | Error |
+| `ILLEGAL_RUN_CATCHING_AROUND_COMPOSABLE` | Error |
+| `MISSING_DISALLOW_COMPOSABLE_CALLS_ANNOTATION` | Error |
+| `COMPOSABLE_SUSPEND_FUN` | Error |
+| `COMPOSABLE_FUN_MAIN` | Error |
+| `COMPOSABLE_VAR` | Error |
+| `COMPOSABLE_PROPERTY_BACKING_FIELD` | Error |
+| `COMPOSABLE_PROPERTY_REFERENCE` | Error |
+| `COMPOSE_INVALID_DELEGATE` | Error |
+| `COMPOSABLE_INAPPLICABLE_TYPE` | Error |
+| `KEY_CALL_WITH_NO_ARGUMENTS` | Error |
+| `MISMATCHED_COMPOSABLE_IN_EXPECT_ACTUAL` | Error |
+| `OPEN_COMPOSABLE_DEFAULT_PARAMETER_VALUE` | Error |
+| `ABSTRACT_COMPOSABLE_DEFAULT_PARAMETER_VALUE` | Error |
+| `COMPOSE_APPLIER_CALL_MISMATCH` | Warning |
+| `COMPOSE_APPLIER_PARAMETER_MISMATCH` | Warning |
+| `COMPOSE_APPLIER_DECLARATION_MISMATCH` | Warning |
+| `DEPRECATED_OPEN_COMPOSABLE_DEFAULT_PARAMETER_VALUE` | Warning |
+| `COMPOSE_CONFIGURATION_ERROR` | Error, no source |
+| `COMPOSE_CONFIGURATION_WARNING` | Warning, no source |
+
+`CONFLICTING_OVERLOADS` does not appear here because it is not a Compose diagnostic. The plugin reuses `FirErrors.CONFLICTING_OVERLOADS` from the Kotlin compiler itself. `COMPOSE_CONFIGURATION_WARNING` is the sourceless factory used for plugin level messages, including the non JVM stability warning from Chapter 4.
 
 ### 8.4 Applier Target System
 
-The applier target system ensures composable functions target compatible UI frameworks.
+A composable function does not produce UI directly. It emits nodes into whatever applier the composition was started with, and an Android UI node means nothing to a canvas or a terminal renderer. The applier target system tracks which applier each composable expects, and reports when two that disagree meet.
 
 #### Scheme Structure
 
-Applier schemes encode which UI framework a composable targets:
+`inference/Scheme.kt` models a target as a sealed `Item` with two implementations, both top level rather than nested:
 
 ```kotlin
 sealed class Item
 
-// Concrete applier, e.g. "androidx.compose.ui.UiComposable"
 class Token(val value: String) : Item()
 
-// Generic/unknown applier, identified by an index that unification can bind
-class Open(val index: Int, override val isUnspecified: Boolean = false) : Item()
+class Open(
+    val index: Int,
+    val constraints: Constraints = Constraints.UNRESTRICTED,
+    override val isUnspecified: Boolean = false,
+) : Item()
+```
 
+A `Token` is a target that is already decided, carrying the fully qualified name of a marker annotation. An `Open` is a target still to be determined. Its `index` is what ties positions together: two `Open` items with the same non negative index have to resolve to the same token, while a negative index means the item is independent of every other. `Constraints` narrows an open target to a set of allowed tokens, which is how a function that declares more than one acceptable target is represented.
+
+A `Scheme` is the target of a declaration plus the schemes of its composable lambda parameters and result:
+
+```kotlin
 class Scheme(
     val target: Item,
     val parameters: List<Scheme> = emptyList(),
     val result: Scheme? = null,
     val anyParameters: Boolean = false,
 ) {
-    // Whether this scheme can legally override `other`
-    // (alpha-renames open targets, then compares structurally).
-    fun canOverride(other: Scheme): Boolean = /* ... */
+    fun canOverride(other: Scheme): Boolean =
+        alphaRename().simpleCanOverride(other.alphaRename())
 }
 ```
 
-Note that `Token` and `Open` are top-level subclasses of `Item` (not nested as `Item.Token`/`Item.Open`), and `Scheme` exposes a `canOverride` check used for override validation rather than `isOpen()`/`isConcrete()` helpers.
+`equals`, `hashCode`, and `canOverride` all compare modulo alpha renaming, so `[0, [0]]` and `[2, [2]]` are the same scheme. What matters is which positions share an index, not which numbers were used. `canOverride` is what `ComposableFunctionChecker` calls when validating an override.
 
-**Example Schemes:**
+The debug form is `[target, parameter, parameter: result]`. Serialization into the `@ComposableInferredTarget` annotation is separate and produces three strings:
 
 ```kotlin
-// UI Composable targeting Android UI
-Scheme(Token("androidx.compose.ui.UiComposable"))
-
-// Generic composable (works with any applier)
-Scheme(Open(-1))
-
-// Composable with lambda expecting UI target
-Scheme(
-    target = Token("androidx.compose.ui.UiComposable"),
-    parameters = listOf(
-        Scheme(Token("androidx.compose.ui.UiComposable"))
-    )
-)
+data class SerializedScheme(val scheme: String, val positional: String, val indexed: String)
 ```
+
+The extra two carry the constraint sets, which the main string has no room for.
 
 #### Target Inference Algorithm
 
-The `ApplierInferencer` class performs unification to resolve applier targets. It is **generic and adapter-driven** — it is not tied to descriptors or a `ModuleDescriptor`. Instead, callers supply adapters that teach it how to read schemes from their own node/type representation (so the same engine works for both K1 and K2):
+`ApplierInferencer` is generic over the node and type representation, so the same engine serves both the FIR frontend and the IR backend:
 
 ```kotlin
 class ApplierInferencer<Type, Node>(
@@ -2556,51 +2831,74 @@ class ApplierInferencer<Type, Node>(
     private val nodeAdapter: NodeAdapter<Type, Node>,
     private val lazySchemeStorage: LazySchemeStorage<Node>,
     private val errorReporter: ErrorReporter<Node>,
-) {
-    // Infers/visits a node, unifying the schemes of a call with its callees.
-}
+)
 ```
 
-Conceptually, inference proceeds by:
+It exposes `visitVariable`, `visitCall`, and `toFinalScheme`. Callers supply four adapters: `TypeAdapter` reads a declared scheme off a type, `NodeAdapter` navigates containers and parameter positions, `LazySchemeStorage` caches partially resolved schemes, and `ErrorReporter` receives conflicts.
 
-1. Reading the declared scheme from `@ComposableTarget`/`@ComposableInferredTarget` annotations (or a fully-open scheme when none is present).
-2. Walking the call graph via the adapters and **unifying** the scheme of each call site with the scheme of its callee.
-3. Resolving open targets through a `Bindings` table: an `Open(index)` target gets *bound* to a concrete `Token` when it meets one, and two different concrete `Token`s that meet are a conflict (reported via `errorReporter`, not by throwing).
-4. Merging results with `Scheme.mergeWith` / `bindings.unify` to produce the final, possibly-still-open scheme.
+The algorithm is unification, the same technique type inference uses:
 
-There are no `Constraint`/`Substitution`/`IncompatibleApplierException` types; unification state lives in `Bindings` and `LazyScheme`.
+1. Read the declared scheme from `@ComposableTarget` and `@ComposableInferredTarget`, or start fully open when there is none.
+2. Convert each scheme to `CallBindings`, a tree of `Binding` objects mirroring the scheme's shape.
+3. Unify the call's bindings with the callee's, position by position.
+4. When an open binding meets a token, bind it. When two open bindings meet, merge them so they resolve together.
 
-#### Cross-Target Validation
-
-Validates that composable calls use compatible appliers:
+`Bindings` keeps unified bindings in a circular list and always merges the smaller group into the larger, which keeps the work bounded as a call graph grows. Binding fails when the intersected constraints allow nothing:
 
 ```kotlin
-private fun checkApplierCompatibility(
-    caller: CallableDescriptor,
-    callee: CallableDescriptor,
-    context: CallCheckerContext
-) {
-    val callerScheme = inferredScheme(caller)
-    val calleeScheme = inferredScheme(callee)
+fun unify(a: Binding, b: Binding): Boolean
+```
 
-    if (!areCompatible(callerScheme, calleeScheme)) {
-        context.trace.report(
-            COMPOSE_APPLIER_CALL_MISMATCH.on(
-                context.element,
-                calleeScheme.target.toString(),
-                callerScheme.target.toString()
-            )
-        )
+Failure comes back as `false` and reaches the user through `ErrorReporter`. Nothing is thrown, and no substitution map is built: the whole state lives in `Bindings` and `LazyScheme`.
+
+#### Where Targets Come From
+
+Nothing in the compiler hardcodes a target name. A token is either the `applier` string of a `@ComposableTarget` annotation, or the fully qualified name of an annotation class that is itself annotated `@ComposableTargetMarker`. `androidx.compose.ui.UiComposable` is just what the UI library happens to call its marker; the compiler never mentions it.
+
+```kotlin
+fun FirCallableSymbol<*>.schemeItem(): Item {
+    val targets = targetsFromAnnotations()
+    val explicitOpen = compositionOpenTarget()
+    return when {
+        targets.size == 1 -> Token(targets.first())
+        targets.size > 1 -> Open(explicitOpen ?: -1, constraints = Constraints.restrictedTo(targets))
+        explicitOpen != null -> Open(explicitOpen)
+        else -> Open(-1, isUnspecified = true)
     }
 }
 ```
+
+The annotations all live in `androidx.compose.runtime`: `ComposableTarget(applier)`, `ComposableOpenTarget(index)`, `ComposableInferredTarget(scheme)`, `ComposableInferredTargetConstraints(positional, indexed)`, and `ComposableTargetMarker(description)`. That `description` is what turns a token back into readable text in a diagnostic.
+
+#### Cross Target Validation
+
+`k2/ComposableTargetChecker.kt` is a `FirFunctionCallChecker` that runs the inferencer over each composable call:
+
+```kotlin
+override fun check(expression: FirFunctionCall) {
+    val calleeFunction = expression.calleeReference.toResolvedCallableSymbol() ?: return
+    if (calleeFunction.isComposable(context.session)) {
+        updateParents(context)
+        val infer = FirApplierInferencer(context, reporter)
+        val call = inferenceNodeOf(expression, context)
+        val target = callableInferenceNodeOf(expression, calleeFunction, context)
+        // ... map arguments to inference nodes ...
+        infer.visitCall(call, target, arguments)
+    }
+}
+```
+
+Its `ErrorReporter` turns the failed token sets into prose using each marker's `description`, and reports one of two diagnostics:
+
+- `COMPOSE_APPLIER_CALL_MISMATCH`: "Calling a {1} composable function where a {0} composable was expected"
+- `COMPOSE_APPLIER_PARAMETER_MISMATCH`: "A {1} composable parameter was provided where a {0} composable was expected"
 
 **Example Error:**
 
 ```kotlin
 @Composable
 @ComposableTarget("androidx.compose.ui.UiComposable")
-fun UiButton(text: String) { /* ... */ }
+fun UiButton(text: String, content: @Composable () -> Unit) { /* ... */ }
 
 @Composable
 @ComposableTarget("com.example.CustomApplier")
@@ -2614,163 +2912,156 @@ fun Screen() {
 }
 ```
 
-> Note: under K1 applier-target mismatches are reported as **errors**, but under K2 (the default frontend) `COMPOSE_APPLIER_CALL_MISMATCH`, `COMPOSE_APPLIER_PARAMETER_MISMATCH`, and `COMPOSE_APPLIER_DECLARATION_MISMATCH` are reported as **warnings**.
+All three applier diagnostics are warnings rather than errors. A mismatch usually is a real bug, but inference here spans the whole call graph, and a library that never declared a target can pull an unrelated build into a conflict it cannot fix. Reporting without blocking is the compromise.
 
-### 8.5 Type Resolution and Inference
+### 8.5 Composable Function Types
 
-Automatically infers `@Composable` annotation on lambda expressions based on expected type.
-
-> Note: `ComposeTypeResolutionInterceptorExtension` shown below is the **K1-only** mechanism (package `...kotlin.k1`). Under K2 (the default), composable-lambda inference is performed in FIR, not via a `TypeResolutionInterceptor`.
-
-#### Automatic Composable Inference
+The frontend has no interceptor rewriting lambda descriptors anymore. `@Composable` function types are a first class function type kind in FIR, contributed by an extension:
 
 ```kotlin
-class ComposeTypeResolutionInterceptorExtension : TypeResolutionInterceptorExtension {
-    override fun interceptFunctionLiteralDescriptor(
-        expression: KtLambdaExpression,
-        context: TypeResolutionContext,
-        descriptor: FunctionDescriptor
-    ): FunctionDescriptor {
-        val expectedType = context.expectedType ?: return descriptor
-
-        if (!expectedType.isComposableType()) return descriptor
-        if (descriptor.isComposableCallable()) return descriptor
-
-        // Infer @Composable on lambda
-        val composableDescriptor = descriptor.copy(
-            annotations = descriptor.annotations + ComposableAnnotation
-        )
-
-        // Record inference
-        context.trace.record(
-            FrontendWritableSlices.INFERRED_COMPOSABLE_DESCRIPTOR,
-            composableDescriptor,
-            true
-        )
-
-        context.trace.record(
-            FrontendWritableSlices.INFERRED_COMPOSABLE_LITERAL,
-            expression.functionLiteral,
-            true
-        )
-
-        return composableDescriptor
+class ComposableFunctionTypeKindExtension(session: FirSession) : FirFunctionTypeKindExtension(session) {
+    override fun FunctionTypeKindRegistrar.registerKinds() {
+        registerKind(ComposableFunction, KComposableFunction)
     }
+}
+
+object ComposableFunction : FunctionTypeKind(
+    FqName("androidx.compose.runtime.internal"),
+    "ComposableFunction",
+    ComposeClassIds.Composable,
+    isReflectType = false,
+    isInlineable = true,
+) {
+    override val prefixForTypeRender: String get() = "@Composable"
+    override fun reflectKind(): FunctionTypeKind = KComposableFunction
 }
 ```
 
-#### Lambda Type Adaptation
-
-The system automatically adapts lambda types to match composable expectations:
+Because the kind is registered with the type system, `@Composable () -> Unit` is a distinct type rather than a function type with an annotation on it. Ordinary type inference then does the work that used to need an interceptor:
 
 ```kotlin
-// Expected: @Composable () -> Unit
+// Expected type is @Composable () -> Unit, so the lambda is inferred
+// with the ComposableFunction kind and composable calls are allowed inside it
 val content: @Composable () -> Unit = {
-    // Lambda automatically becomes @Composable
-    Text("Hello")  // Composable call allowed
+    Text("Hello")
 }
 
-// Without inference, this would be an error
 Column(
-    content = {  // Automatically @Composable
+    content = {
         Text("Item 1")
         Text("Item 2")
     }
 )
 ```
 
+This is also the check `ComposableCallChecker` performs when it asks whether a lambda opens a composable scope: `function.typeRef.coneType.functionTypeKind(context.session) === ComposableFunction`.
+
+One compatibility detail is worth noting. The kind sets `serializeAsFunctionWithAnnotationUntil`, so composable function types are written into metadata as plain function types carrying `@Composable`. That keeps libraries built by the current compiler readable by older plugin versions.
+
 ### 8.6 Analysis Pipeline
 
 #### Compilation Phases
 
-The analysis system operates through distinct compilation phases:
-
 ```
 ┌─────────────────────────┐
 │    1. PARSING           │
-│  PSI Tree Construction  │
+│  Source to light tree   │
 └───────────┬─────────────┘
             │
 ┌───────────▼─────────────┐
-│  2. RESOLUTION (K1/K2)  │
-│  Type & Symbol Binding  │
+│   2. FIR RESOLUTION     │
+│  Types, symbols, and    │
+│  composable type kinds  │
 └───────────┬─────────────┘
             │
 ┌───────────▼─────────────┐
-│   3. DIAGNOSTIC PHASE   │
-│  Checkers & Validators  │
+│   3. FIR CHECKERS       │
 │  ┌──────────────────┐   │
-│  │ Annotation Check │   │
-│  │ Declaration Check│   │
-│  │ Call Check       │   │
-│  │ Target Check     │   │
+│  │ Annotation check │   │
+│  │ Function check   │   │
+│  │ Property check   │   │
+│  │ Call check       │   │
+│  │ Target check     │   │
 │  └──────────────────┘   │
 └───────────┬─────────────┘
             │
 ┌───────────▼─────────────┐
-│   4. IR GENERATION      │
-│  Convert PSI to IR Tree │
+│   4. FIR2IR             │
+│  Build the IR tree      │
 └───────────┬─────────────┘
             │
 ┌───────────▼─────────────┐
 │   5. IR ANALYSIS        │
-│  Stability Inference    │
-│  Static Detection       │
+│  Stability inference    │
+│  Static detection       │
 └───────────┬─────────────┘
             │
 ┌───────────▼─────────────┐
 │   6. IR LOWERING        │
-│  Transform Composables  │
+│  Transform composables  │
 └─────────────────────────┘
 ```
 
-#### Data Flow Through Phases
+#### Extension Registration
 
-**Frontend Analysis → WritableSlices:**
+Everything the frontend contributes is registered in one place:
 
 ```kotlin
-// During type resolution
-ComposeTypeResolutionInterceptor {
-    record(INFERRED_COMPOSABLE_DESCRIPTOR, descriptor, true)
-}
+class ComposeFirExtensionRegistrar : FirExtensionRegistrar() {
+    override fun ExtensionRegistrarContext.configurePlugin() {
+        +::ComposableFunctionTypeKindExtension
+        +::ComposeFirCheckersExtension
+        +::ComposableTargetSessionStorage
 
-// During call checking
-ComposableCallChecker {
-    record(LAMBDA_CAPABLE_OF_COMPOSER_CAPTURE, lambda, true)
-}
-
-// During target checking
-ComposableTargetChecker {
-    record(COMPOSE_LAZY_SCHEME, function, scheme)
+        registerDiagnosticContainers(ComposeErrors)
+    }
 }
 ```
 
-**IR Analysis → IR Attributes:**
+`ComposeFirCheckersExtension` is where each checker is attached to its slot:
 
 ```kotlin
-// During static-expression analysis
+override val declarationCheckers = object : DeclarationCheckers() {
+    override val functionCheckers = setOf(ComposableFunctionChecker)
+    override val propertyCheckers = setOf(ComposablePropertyChecker)
+}
+override val typeCheckers = object : TypeCheckers() {
+    override val resolvedTypeRefCheckers = setOf(ComposableAnnotationChecker)
+}
+override val expressionCheckers = object : ExpressionCheckers() {
+    override val functionCallCheckers = setOf(ComposableFunctionCallChecker, ComposableTargetChecker)
+    override val propertyAccessExpressionCheckers = setOf(ComposablePropertyAccessExpressionChecker)
+    override val callableReferenceAccessCheckers = setOf(ComposablePropertyReferenceChecker)
+}
+```
+
+There is no declaration generator, supertype generator, or status transformer. The frontend only inspects and reports; every declaration the plugin synthesizes, including the `$stable` field, is created in the IR phase.
+
+#### Data Flow Through Phases
+
+**FIR checkers to session components:**
+
+```kotlin
+// During applier target checking
+session.composableTargetSessionStorage.storeLazyScheme(node, lazyScheme)
+```
+
+**IR analysis to IR attributes:**
+
+```kotlin
+// During static expression analysis
 expression.isStaticExpression = isStatic
 
 // During key generation
-DurableFunctionKeyTransformer {
-    function.durableFunctionKey = keyInfo
-}
+function.durableFunctionKey = keyInfo
 ```
 
-**IR Lowering → Read Attributes:**
+**IR lowering reading attributes back:**
 
 ```kotlin
 // During composable transformation
-ComposableFunctionBodyTransformer {
-    val isStatic = expr.isStaticExpression
-    val key = function.durableFunctionKey
-
-    if (isStatic) {
-        // Generate optimized code
-    } else {
-        // Generate standard code
-    }
-}
+val isStatic = expr.isStaticExpression
+val key = function.durableFunctionKey
 ```
 
 ### 8.7 Practical Examples
@@ -2778,41 +3069,48 @@ ComposableFunctionBodyTransformer {
 #### Example: Composable Context Validation
 
 ```kotlin
-// Source code
 class MainActivity {
     fun onCreate() {
-        Text("Hello")  // ERROR: Not in composable context
+        Text("Hello")  // ERROR: COMPOSABLE_INVOCATION
     }
 
     @Composable
     fun Content() {
-        Text("Hello")  // OK: In composable function
+        Text("Hello")  // OK: inside a composable function
 
         runBlocking {
-            Text("Error")  // ERROR: In non-composable lambda
+            Text("Error")  // ERROR: COMPOSABLE_INVOCATION
         }
 
         LaunchedEffect(Unit) {
-            Text("Error")  // ERROR: LaunchedEffect block is suspend, not composable
+            Text("Error")  // ERROR: the block is suspend, not composable
+        }
+
+        try {
+            Text("Error")  // ERROR: ILLEGAL_TRY_CATCH_AROUND_COMPOSABLE
+        } catch (e: Exception) {
+            Text("Fine")   // OK: catch blocks are allowed
         }
     }
 }
 ```
 
-**Analysis Flow:**
+**Analysis flow for the first call:**
 
-1. `ComposableCallChecker` sees `Text("Hello")` call
-2. Walks up PSI tree from call site
-3. In `onCreate`: Reaches `KtFunction` without `@Composable` → Reports `COMPOSABLE_INVOCATION`
-4. In `Content`: Finds `@Composable` function → Valid
-5. In `runBlocking`: Lambda not composable → Reports `COMPOSABLE_INVOCATION`
-6. In `LaunchedEffect`: Suspend lambda context → Reports `COMPOSABLE_INVOCATION`
+1. `ComposableFunctionCallChecker` resolves `Text` and finds it composable
+2. `visitCurrentScope` walks outward from the call through `containingElements`
+3. It reaches `onCreate`, a `FirFunction` without `@Composable`, so `checkComposableFunction` reports `COMPOSABLE_EXPECTED` on the declaration and returns `CONTINUE`
+4. The walk ends, and `checkComposableCall` reports `COMPOSABLE_INVOCATION` on the call
+
+The developer sees two diagnostics for one mistake, one pointing at the call and one at the function that should have been annotated.
+
+The `runBlocking` and `LaunchedEffect` cases end the same way for a different reason. Neither function is inline, so their lambdas arrive with an `inlineStatus` other than `Inline`. Their function type kind is not `ComposableFunction` either, so the walk visits the lambda, finds nothing composable about it, and the non inline status stops it right there. Suspend lambdas are never special cased anywhere in the checker; they simply fail the composable type kind test like any other ordinary lambda.
 
 #### Example: Inline Lambda Analysis
 
 ```kotlin
 inline fun <T> withoutComposables(
-    @DisallowComposableCalls noinline block: () -> T
+    @DisallowComposableCalls block: () -> T
 ): T = block()
 
 @Composable
@@ -2824,88 +3122,95 @@ fun Screen() {
 }
 ```
 
-**Analysis Flow:**
+**Analysis flow:**
 
-1. `ComposableCallChecker.checkInlineLambdaCall()` examines `withoutComposables` call
-2. Finds parameter `block` has `@DisallowComposableCalls`
-3. Traverses lambda body AST
-4. Finds composable call to `Text()`
-5. Reports `CAPTURED_COMPOSABLE_INVOCATION` with parameter name and function
+1. The walk from `Text` reaches the lambda, which is `Inline`
+2. `findValueParameterForLambdaAtIndex` maps the lambda back to `block` through the resolved argument list
+3. `block`'s type carries `@DisallowComposableCalls`
+4. `CAPTURED_COMPOSABLE_INVOCATION` is reported, naming both `block` and `withoutComposables`
+
+The rule exists because an inline lambda passed to a function like this may be stored and invoked later, outside composition, where there is no composer to call into.
 
 #### Example: Stability and Skipping
 
 ```kotlin
-// Source
-data class StableUser(val name: String, val age: Int)
-data class UnstableUser(var name: String, var age: Int)
+class Foo(var value: Int = 0)
 
 @Composable
-fun StableUserCard(user: StableUser) {
-    Text(user.name)
+fun Test(x: Int) {
+    A(x)
 }
 
 @Composable
-fun UnstableUserCard(user: UnstableUser) {
-    Text(user.name)
+fun Test(x: Foo) {
+    used(x)
 }
 ```
 
-**Analysis and Generation:**
+**Stability analysis:**
 
-1. **Stability Analysis:**
-   - `StableUser`: All `val` properties of stable types → `Certain(stable = true)`
-   - `UnstableUser`: Has `var` properties → `Certain(stable = false)`
+- `Int` is a primitive, so `Certain(stable = true)`
+- `Foo` has a `var` property, so `Certain(stable = false)`, and it gets `@StabilityInferred(parameters = 0)` with `$stable = 8`
 
-2. **IR Attribute Recording:**
-   ```kotlin
-   stableUserParam.isStaticExpression = false
-   unstableUserParam.isStaticExpression = false
-   ```
+**Generated code**, as the compiler's golden tests record it:
 
-3. **Code Generation Difference:**
+```kotlin
+fun Test(x: Int, %composer: Composer?, %changed: Int) {
+  %composer = %composer.startRestartGroup(<>)
+  val %dirty = %changed
+  if (%changed and 0b0110 == 0) {
+    %dirty = %dirty or if (%composer.changed(x)) 0b0100 else 0b0010
+  }
+  if (%composer.shouldExecute(%dirty and 0b0011 != 0b0010, %dirty and 0b0001)) {
+    A(x, %composer, 0b1110 and %dirty)
+  } else {
+    %composer.skipToGroupEnd()
+  }
+  %composer.endRestartGroup()?.updateScope { %composer: Composer?, %force: Int ->
+    Test(x, %composer, updateChangedFlags(%changed or 0b0001))
+  }
+}
+```
 
-   **StableUserCard (can skip):**
-   ```kotlin
-   fun StableUserCard(user: StableUser, $composer: Composer, $changed: Int) {
-       $composer.startRestartGroup(key)
-       if ($changed and 0x1 == 0 && $composer.skipping) {
-           $composer.skipToGroupEnd()  // Skip if user unchanged
-       } else {
-           Text(user.name, $composer, 0)
-       }
-       $composer.endRestartGroup()?.updateScope {
-           StableUserCard(user, it, $changed or 0x1)
-       }
-   }
-   ```
+```kotlin
+fun Test(x: Foo, %composer: Composer?, %changed: Int) {
+  %composer = %composer.startRestartGroup(<>)
+  val %dirty = %changed
+  if (%changed and 0b0110 == 0) {
+    %dirty = %dirty or if (%composer.changedInstance(x)) 0b0100 else 0b0010
+  }
+  if (%composer.shouldExecute(%dirty and 0b0011 != 0b0010, %dirty and 0b0001)) {
+    used(x)
+  } else {
+    %composer.skipToGroupEnd()
+  }
+  %composer.endRestartGroup()?.updateScope { %composer: Composer?, %force: Int ->
+    Test(x, %composer, updateChangedFlags(%changed or 0b0001))
+  }
+}
+```
 
-   **UnstableUserCard (always executes):**
-   ```kotlin
-   fun UnstableUserCard(user: UnstableUser, $composer: Composer, $changed: Int) {
-       $composer.startRestartGroup(key)
-       // No skipping logic - always executes
-       Text(user.name, $composer, 0)
-       $composer.endRestartGroup()?.updateScope {
-           UnstableUserCard(user, it, 0x1)
-       }
-   }
-   ```
+The two bodies have the same shape. Both open a restart group, both compute a `%dirty` mask, both gate the body on `shouldExecute`, and both skip to the end of the group when nothing changed. There is exactly one difference: the stable parameter goes through `%composer.changed(x)` and the unstable one through `%composer.changedInstance(x)`.
 
-The analysis system's decisions directly impact runtime performance through intelligent code generation based on stability inference and validation results.
+That single call is where all of stability inference lands. `changed` compares with `equals()`, so an equal value skips even when it is a different instance. `changedInstance` compares with `===`, so a rebuilt object never compares equal and the body runs again. A `data class` that is unstable does not lose the ability to skip; it loses the ability to *match*, which in a screen that rebuilds its state on every emission amounts to the same cost.
 
+`shouldExecute` came in with pausable composition. Its first argument is whether any used parameter differs from last time, and its second is `%dirty and 1`, the low bit that says the scope was restarted rather than reached normally. That second argument is what lets a paused composition resume a scope it had already decided to skip. When `FeatureFlag.PausableComposition` is off, or the runtime on the classpath is too old to have the function, `irShouldExecute` falls back to the older form:
+
+```kotlin
+irOrOr(
+    parametersChanged,
+    irNot(irIsSkipping())
+)
+```
+
+One more branch depends on the flags. With strong skipping disabled, a function that has both unstable parameters and default values gets an extra guard, `defaultParam.irHasAnyProvidedAndUnstable(unstableMask)`, forcing execution whenever an unstable parameter was actually passed. Strong skipping makes that guard unnecessary, since `changedInstance` already handles those parameters, so with the default configuration it is never generated.
 ## Conclusion
 
-The Compose compiler's stability inference system operates through a multi-phase analysis process that examines types, classes, and expressions. The system balances compile-time analysis with runtime checks, enabling optimization while maintaining correctness guarantees.
+Most day to day work with stability comes down to two habits. Read the `-classes.txt` report before you guess, because the compiler will tell you exactly which field made a class unstable and the answer is often a `var` you forgot about or an interface typed property. And when you reach for a fix, prefer giving the compiler something it can infer, a `val` of a type it already knows, over declaring a type stable in the configuration file, since that declaration is a promise the compiler cannot check.
 
-Key principles:
-1. Stability enables recomposition skipping through value comparison
-2. The algorithm proceeds from fast paths to detailed analysis
-3. Bitmasks encode generic type parameter dependencies
-4. External modules require runtime stability fields
-5. Configuration files extend stability to external types
-6. Conservative handling ensures correctness over optimization
+What is worth carrying away is that stability was never really about skipping. Since strong skipping became the default, every restartable composable can skip. Stability decides how the runtime *compares* a parameter, `equals()` or `===`, and everything in this repository, the bitmasks, the `$stable` field, the file scoped runtime fallback, exists to answer that one question as precisely as separate compilation allows. Once you read it that way, an unstable class stops being a thing that blocks an optimization and becomes a thing that compares by identity, which is a far easier property to reason about in your own code.
 
-Understanding this system allows developers to structure code for optimal Compose performance while maintaining type safety and correctness. If you want to get more information about the Compose performance, check out [compose-performance repository](https://github.com/skydoves/compose-performance).
+If you want more on Compose performance, check out the [compose-performance repository](https://github.com/skydoves/compose-performance).
 
 <a href="https://www.android.skydoves.me/">
 <img src="https://github.com/user-attachments/assets/e014ce01-3461-40af-bb2a-eb44f3f55f36" width="13%" align="right"/>
@@ -2913,7 +3218,7 @@ Understanding this system allows developers to structure code for optimal Compos
 
 ## 📘 Manifest Android Interview
 
-[Manifest Android Interview](https://www.android.skydoves.me/) is a comprehensive guide designed to enhance your Android development expertise through 108 interview questions with detailed answers, 162 additional practical questions, and 50+ "Pro Tips for Mastery" sections. The interview questions primarily focus on Android development—including the Framework, UI, Jetpack Libraries, and Business Logic—as well as Jetpack Compose, covering Fundamentals, Runtime, and UI.
+[Manifest Android Interview](https://www.android.skydoves.me/) is a comprehensive guide designed to enhance your Android development expertise through 108 interview questions with detailed answers, 162 additional practical questions, and 50+ "Pro Tips for Mastery" sections. The interview questions primarily focus on Android development, including the Framework, UI, Jetpack Libraries, and Business Logic, as well as Jetpack Compose, covering Fundamentals, Runtime, and UI.
 
 <a href="https://github.com/doveletter">
 <img src="https://github.com/user-attachments/assets/3ecd2a7b-9713-40cd-8817-fa568271cefa" width="13%" align="right"/>
