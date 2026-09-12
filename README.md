@@ -693,13 +693,21 @@ For expressions (used in default parameters and composable bodies):
              │ No
              ▼
 ┌─────────────────────────────────┐
+│  A local delegated property     │───Yes──→ [STABLE]
+│  reference?                     │
+└────────────┬────────────────────┘
+             │ No
+             ▼
+┌─────────────────────────────────┐
 │  Is it a composite with all     │───Yes──→ [STABLE]
 │  stable subexpressions?         │
 └────────────┬────────────────────┘
              │ No
              ▼
-         [UNSTABLE]
+   Fall back to the type's stability
 ```
+
+Note the last box. An expression the analysis cannot say anything extra about does not become unstable, it keeps whatever its type already said. Expression analysis only ever improves on the type result, never worsens it.
 
 #### Key Decision Points Explained
 
@@ -1180,13 +1188,14 @@ return stability
 Beyond type stability, the compiler analyzes expression stability:
 
 ```kotlin
-fun stabilityOf(expr: IrExpression): Stability {
-    val stability = stabilityOf(expr.type)
+fun stabilityOf(expr: IrExpression, fileContainingDependent: IrFile?): Stability {
+    // look at type first. if type is stable, whole expression is
+    val stability = stabilityOf(expr.type, fileContainingDependent)
     if (stability.knownStable()) return stability
 
     return when (expr) {
         is IrConst -> Stability.Stable
-        is IrCall -> stabilityOf(expr, stability)
+        is IrCall -> stabilityOf(expr, stability, fileContainingDependent)
         is IrGetValue -> /* analyze variable */
         is IrLocalDelegatedPropertyReference -> Stability.Stable
         is IrComposite -> /* analyze all statements */
@@ -1194,6 +1203,8 @@ fun stabilityOf(expr: IrExpression): Stability {
     }
 }
 ```
+
+The type is checked first, and a stable type ends it there. Everything below only runs when the type alone was not enough.
 
 #### Constant Expressions
 
@@ -1246,15 +1257,30 @@ val stableFunctions = mapOf(
 
 #### Variable Reference Expressions
 
-For `val` variables, the compiler checks initializer stability:
+A reference to a local `val` inherits its initializer's stability. A `var` cannot, since the value may have been reassigned since:
 
 ```kotlin
-val x = 42              // Stable initializer
-val y = x               // IrGetValue(x) → Stable
-
-var z = 42              // Mutable variable
-val w = z               // IrGetValue(z) → use type stability
+is IrGetValue -> {
+    val owner = expr.symbol.owner
+    if (owner is IrVariable && !owner.isVar) {
+        owner.initializer?.let { stabilityOf(it, fileContainingDependent) } ?: stability
+    } else {
+        stability
+    }
+}
 ```
+
+This is where expression analysis earns its place, because the type on its own would say nothing useful:
+
+```kotlin
+val items = listOf("a", "b")  // listOf is in stableFunctions → Stable
+val alias = items             // IrGetValue over a val → reads the initializer → Stable
+
+var mutable = listOf("a", "b")
+val alias2 = mutable          // IrGetValue over a var → falls back to List → Unknown
+```
+
+The check is limited to `IrVariable`, so it applies to local variables only. A property read goes through a getter and is handled by the `IrCall` branch instead.
 
 ## Chapter 4: Implementation Mechanisms
 
