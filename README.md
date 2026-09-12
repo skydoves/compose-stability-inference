@@ -1560,6 +1560,30 @@ fun Stability.normalize(): Stability {
 - `Stability.Unstable` if any component is unstable
 - `Stability.Combined([...])` with deduplicated elements otherwise
 
+Dropping `Unknown` is what makes an `open` class usable. Recall from Phase 12 that a non final class seeds as `Unknown(declaration)`. Without normalization that seed would sit in the result forever and every open class would be unstable. Instead:
+
+```kotlin
+open class Parent(val b: B)
+class Child : Parent(B())
+```
+
+`Parent` seeds `Unknown(Parent)`, picks up `Runtime(B)` from its field, and normalizes to `Combined([Runtime(B)])`. The compiler emits:
+
+```kotlin
+@StabilityInferred(parameters = 0)
+open class Parent(val b: B) {
+  val %stable: Int = B.%stable
+}
+@StabilityInferred(parameters = 0)
+class Child : Parent {
+  val %stable: Int = B.%stable
+}
+```
+
+Both classes defer to `B` at runtime. `Child` gets there a different way: its superclass result is a `Combined`, not a bare `Unknown`, so the Phase 12 rule does not drop it, and normalization strips the `Unknown` out of it afterwards. The drop in Phase 12 only fires when the superclass resolves to `Unknown` on its own.
+
+When nothing expressible survives, `irStableExpression` returns `null` for the remaining `Unknown` and the class falls back to `UNSTABLE`. That is the path `class X<T>(val p1: List<T>)` takes.
+
 ## Chapter 5: Case Studies
 
 ### 5.1 Primitive and Standard Library Types
