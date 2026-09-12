@@ -255,7 +255,22 @@ fun Caller() {
 
 ### 1.4 Strong Skipping
 
-Everything above describes the classic skipping rule: a restartable composable is skippable only when every parameter type is stable. Strong skipping changes that rule, and it has been enabled by default since the compiler shipped `FeatureFlag.StrongSkipping` with `default = true`:
+Everything above describes the classic skipping rule. It was narrower than it is usually remembered: a parameter only blocked skipping when it was used, unstable, **and** required, which is exactly the condition the body transformer still carries for builds that turn the flag off:
+
+```kotlin
+if (
+    !FeatureFlag.StrongSkipping.enabled &&
+    isUsed &&
+    isUnstable &&
+    isRequired
+) {
+    // if it is a used + unstable parameter with no default expression and we are
+    // not in strong skipping mode, the fn will _never_ skip
+    mightSkip = false
+}
+```
+
+An unstable parameter with a default, or one the body never reads, was always fine. Strong skipping removes the condition entirely, and it has been on by default since the compiler shipped `FeatureFlag.StrongSkipping` with `default = true`:
 
 ```kotlin
 enum class FeatureFlag(val featureName: String, val default: Boolean) {
@@ -267,7 +282,7 @@ enum class FeatureFlag(val featureName: String, val default: Boolean) {
 }
 ```
 
-With strong skipping on, every restartable composable becomes skippable, whatever the stability of its parameters. Stability no longer decides *whether* the function can skip. It decides *how the parameter is compared*:
+With strong skipping on, a restartable composable is skippable regardless of what its parameters are, unless it opts out. Stability no longer decides *whether* the function can skip. It decides *how each parameter is compared*:
 
 - A stable parameter is compared with `Composer.changed()`, which uses structural equality (`equals()`)
 - An unstable parameter is compared with `Composer.changedInstance()`, which uses referential equality (`===`)
@@ -322,7 +337,7 @@ class Counter(var count: Int)
 - `String` and `Unit`
 - Function types (`FunctionN`, `KFunctionN`)
 - Classes with only stable `val` properties
-- Classes with any `var` property (immediately unstable)
+- Classes with a non delegated `var` property that has a backing field (immediately unstable)
 - Classes marked with `@Stable` or `@Immutable` annotations
 
 **Implementation:** See `Stability.kt` for the `knownStable()` extension function.
@@ -458,7 +473,9 @@ class Complex<T, U>(
     val param1: T,          // Parameter(T)
     val param2: U           // Parameter(U)
 )
-// Combined([Certain(true), Parameter(T), Parameter(U)])
+// Stable + Stable      = Stable
+// Stable + Parameter(T) = Parameter(T)
+// Parameter(T) + Parameter(U) = Combined([Parameter(T), Parameter(U)])
 ```
 
 **Combination Rules:**
@@ -829,7 +846,7 @@ type.isNullable() -> stabilityOf(
 
 #### Phase 4: Value Class Handling
 
-Kotlin has two shapes of value class, and the compiler checks them in order. A **multi field value class** holds more than one underlying property, and the compiler reports it through `isFullValueClassType()`:
+The IR models a value class with one of two representations, and the compiler checks them in that order. `FullValueClassRepresentation` holds a *list* of underlying properties. Every multi field value class has one, and so does a single property value class on a target that does not use the JVM inline layout. `isFullValueClassType()` tests for it:
 
 ```kotlin
 type.isFullValueClassType() -> {
@@ -848,9 +865,9 @@ type.isFullValueClassType() -> {
 }
 ```
 
-Every underlying property contributes, and the results are folded into a `Combined`. An abstract value class has no `valueClassRepresentation`, so it falls back to `Unstable`.
+Every underlying property contributes, and the results are folded into a `Combined`. An abstract value class has no `valueClassRepresentation` at all, so it falls back to `Unstable`.
 
-A single field **inline class** unwraps to its one underlying type instead:
+`InlineClassRepresentation` holds exactly one property, and `isInlineClassType()` tests for it. That branch unwraps to the single underlying type:
 
 ```kotlin
 type.isInlineClassType() -> {
@@ -873,7 +890,7 @@ type.isInlineClassType() -> {
 }
 ```
 
-The `treatCompatibleFullValueClassesAsInline = false` argument is what keeps the two branches apart. Without it, a multi field value class that happens to be layout compatible with an inline class would be unwrapped to a single type and the other properties would go unchecked.
+The `treatCompatibleFullValueClassesAsInline = false` argument is what keeps the two branches apart. With `true`, `getInlineClassUnderlyingType` reinterprets a *compatible* full value class, meaning one with exactly one underlying property and no superclass, as an inline class. The full value class branch above has already handled that case, so passing `false` leaves the inline branch dealing only with genuine inline classes.
 
 **Examples:**
 
@@ -886,9 +903,10 @@ value class UserId(val value: Int)
 value class Token(val value: String)
 // Checks: stabilityOf(String) = Stable
 
+@JvmInline
 value class Range(val start: Int, val end: Int)
-// Multi field value class
-// Checks both: Combined([Stable, Stable])
+// Multi field value class, so FullValueClassRepresentation
+// Checks both underlying types: Combined([Stable, Stable])
 
 @JvmInline
 @Stable
@@ -1077,14 +1095,18 @@ val forcedToUseRuntimeStability = isTargetJvm &&
     (fileContainingDeclaration == null || fileContainingDeclaration != analysisEntryFile)
 
 if (forcedToUseRuntimeStability) {
-    val baseStability = Stability.Runtime(declaration)
-    return baseStability.applyTypeParameterMask(
-        mask = null, // null = consider every type parameter
-        typeParameters = typeParameters,
-        substitutions,
-        analyzing,
-        analysisEntryFile,
-    )
+    if (typeParameters.isEmpty()) {
+        return Stability.Runtime(declaration)
+    } else {
+        val baseStability = Stability.Runtime(declaration)
+        return baseStability.applyTypeParameterMask(
+            mask = null, // null = consider every type parameter
+            typeParameters = typeParameters,
+            substitutions,
+            analyzing,
+            analysisEntryFile,
+        )
+    }
 }
 
 // Classes that come from a separately compiled module arrive as external stubs.
@@ -1315,7 +1337,9 @@ Locale::class.qualifiedName!! to 0
 // No type parameters, and stable unconditionally
 ```
 
-A class the compiler infers itself carries the same encoding in its `@StabilityInferred(parameters = ...)` annotation. Past 32 the encoding simply saturates: a class with 33 type parameters compiles to `@StabilityInferred(parameters = -1)`, every bit set, because `0b1 shl 32` wraps back to bit 0.
+A class the compiler infers itself carries the same encoding in its `@StabilityInferred(parameters = ...)` annotation.
+
+Past 32 the encoding quietly breaks down. `ClassStabilityTransformer` builds the mask with `parameterMask or (0b1 shl index)` and never caps `index`, so `0b1 shl 32` wraps back to bit 0. A class with 33 type parameters where all of them matter compiles to `@StabilityInferred(parameters = -1)`. One where only the 33rd matters compiles to `parameters = 1`, which reads back as "the first type parameter". And a known stable class with 33 parameters gets `parameters = 0`, because the known stable bit is guarded by `symbols.size < 32`. This is a corner nobody hits in practice, but it is worth knowing the mask is not defined past 32 rather than merely truncated.
 
 #### Special Bit: Known Stable
 
@@ -1670,7 +1694,7 @@ class Mixed(
 // Result: Stability.Certain(stable = false)
 ```
 
-The presence of any `var` property makes the entire class unstable.
+A `var` makes the class unstable only when it has a backing field and is not delegated. A `var` with a custom getter and setter and no backing field never reaches the check, and the compiler's golden output confirms it: `class NonBackingFieldUnstableVarProp { var p1: Unstable get() { TODO() } set(value) { } }` compiles to `@StabilityInferred(parameters = 1)` with `$stable = 0`. Section 7.3 covers the delegated case.
 
 ### 5.3 Generic Types
 
@@ -1682,8 +1706,9 @@ class Box<T>(val value: T)
 // Analysis:
 // 1. Field analysis:
 //    - value: T → Stability.Parameter(T)
-// 2. Generate annotation: @StabilityInferred(parameters = 0b1)
-// Result: Stability.Combined([Stability.Parameter(T)])
+// 2. Seed is Stable (final class), and Stable + Parameter(T) returns Parameter(T)
+// 3. Generate annotation: @StabilityInferred(parameters = 0b1)
+// Result: Stability.Parameter(T), not wrapped in a Combined
 
 // Instantiation:
 val intBox: Box<Int>
@@ -1823,9 +1848,11 @@ class Screen(val repo: Repository)
 // Result: Stability.Unknown(Repository)
 
 // Analysis of Screen:
-// 1. Field repo: Repository → Unknown
-// Result: Combined([Unknown(Repository)])
-// Runtime: use instance comparison for repo
+// 1. Seed is Stable (final class)
+// 2. Field repo: Repository → Unknown(Repository)
+// 3. Stable + Unknown returns the Unknown unchanged
+// Result: Stability.Unknown(Repository)
+// At the use site: not expressible, so comparison falls back to changedInstance
 ```
 
 #### Abstract Class
@@ -2100,7 +2127,7 @@ fun matches(name: FqName?, superTypes: List<IrType>): Boolean {
 }
 ```
 
-That is convenient for a sealed hierarchy and a trap for a broad interface. Patterns are stored in a tree keyed by package segment, so a large configuration file does not slow compilation down much.
+That is convenient for a sealed hierarchy and a trap for a broad interface. Patterns are stored in a character trie keyed on the pattern text up to its first wildcard, so a large configuration file does not slow compilation down much. The class KDoc describes the tree as keyed by package segment, but `MutableMatcherTree` walks one `Char` at a time.
 
 **Generic Parameter Encoding:**
 
@@ -2141,15 +2168,19 @@ enum class FeatureFlag(val featureName: String, val default: Boolean) {
 }
 ```
 
-To turn one off, add its disabled form:
+To turn one off, pass its disabled form:
 
 ```kotlin
 composeCompiler {
-    featureFlags = setOf(ComposeFeatureFlag.StrongSkipping.disabled())
+    featureFlags = setOf(ComposeFeatureFlag.PausableComposition.disabled())
 }
 ```
 
-The older single purpose options that used to control these, such as `enableStrongSkippingMode`, `enableIntrinsicRemember`, and `enableNonSkippingGroupOptimization`, are deprecated at `DeprecationLevel.ERROR` alongside `stabilityConfigurationFile`.
+Which flags you can still reach from the DSL has narrowed. In `ComposeFeatureFlags`, `StrongSkipping` and `IntrinsicRemember` are marked `DeprecationLevel.ERROR` with "This flag is now enabled by default and will be removed with Kotlin 2.5.0", so writing `ComposeFeatureFlag.StrongSkipping.disabled()` no longer compiles. `OptimizeNonSkippingGroups` and `PausableComposition` are only `WARNING` and remain usable.
+
+Strong skipping is therefore not something you opt out of any more. If you need one composable to keep running, `@NonSkippableComposable` is the supported way.
+
+The older single purpose options, `enableStrongSkippingMode`, `enableIntrinsicRemember`, and `enableNonSkippingGroupOptimization`, are likewise deprecated at `DeprecationLevel.ERROR` alongside `stabilityConfigurationFile`.
 
 ### 6.3 Compiler Reports
 
@@ -2194,10 +2225,13 @@ A class marked with `@Stable` or `@Immutable` is printed without the `<runtime s
 restartable skippable fun com.example.Image(
   unstable bitmap: ImageBitmap
   stable contentDescription: String?
-  stable modifier: Modifier? = @static Companion
-  stable alignment: Alignment? = @dynamic Companion.Center
+  stable modifier: Modifier? = @static <expression>
+  stable count: Int = @static 0
+  stable label: String? = @dynamic <expression>
 )
 ```
+
+Only an `IrConst` or an `IrGetValue` is printed literally. Everything else prints as the token `<expression>`, so most non trivial defaults show up that way and the `@static` or `@dynamic` tag is the part carrying the information.
 
 `restartable` marks a function that can serve as a recomposition scope, and `skippable` marks one that can be skipped when its arguments compare equal. The two are related but separate. A function has to be restartable to be skippable, and `shouldBeRestartable()` already rules out inline functions, functions with a non Unit return type, `@NonRestartableComposable`, and functions with explicit groups. Among what is left, a `restartable` entry with no `skippable` usually means `@NonSkippableComposable`, since strong skipping makes the rest skippable by default.
 
@@ -2435,10 +2469,11 @@ data class SymbolForAnalysis(
     val analysisEntryFile: IrFile?,
 )
 
-// In stabilityOf(declaration: IrClass)
+// The public overload builds the key
 val fullSymbol = SymbolForAnalysis(symbol, typeArguments, analysisEntryFile)
 
-if (currentlyAnalyzing.contains(fullSymbol))
+// and the private overload it delegates to checks it, first thing
+if (currentlyAnalyzing.contains(symbol))
     return Stability.Unstable
 ```
 
@@ -2545,7 +2580,7 @@ value class Wrapper(val list: MutableList<Int>)
 // Result: Stable (developer responsibility)
 ```
 
-Note that `ClassStabilityTransformer` skips inline class types entirely, so a value class never gets a `$stable` field of its own. Its stability is resolved wherever it is used, by unwrapping it again.
+`ClassStabilityTransformer` skips `cls.defaultType.isInlineClassType()`, and that predicate resolves with `treatCompatibleFullValueClassesAsInline = false`. So a `@JvmInline value class` gets no `$stable` field of its own and is resolved by unwrapping at each use site. A multi field value class is not excluded by that check, so it goes through the transform like an ordinary class and does get `@StabilityInferred` and a `$stable` field.
 
 ## Chapter 8: Compiler Analysis System
 
